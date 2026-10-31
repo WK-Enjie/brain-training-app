@@ -1,507 +1,505 @@
-/* ============================================================
-   MYSTERY GRID REVEAL — script.js
-   Schema-driven loader. No more field-name guessing.
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════
+   Mystery Grid Reveal — Game Engine v7.1
+   Schema-driven loader · Robust math pipeline
+   ═══════════════════════════════════════════════════════ */
 
-'use strict';
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
-// ═══════════════ STATE ═══════════════
+/* ── Global State ── */
 const STATE = {
-    baseUrl: null,
-    index: [],
     worksheet: null,
-    filePath: '',
-    title: '',
-    qIndex: 0,
-    correct: 0,
-    revealed: new Set(),
+    questions: [],
+    currentIndex: 0,
+    score: 0,
     total: 0,
-    answered: false,
-    gambling: false,
-    timers: []
+    tiles: [],
+    gridCols: 6,
+    gridRows: 4,
+    timers: [],
+    gambleActive: false,
+    locked: false,
+    baseResolved: null,
+    currentFilePath: ''
 };
 
-// ═══════════════ HELPERS ═══════════════
-const $  = (s) => document.querySelector(s);
-const $$ = (s) => document.querySelectorAll(s);
+/* ══════════════════════════════════════════════
+   MATH PROCESSING PIPELINE
+   Stash → Convert → Wrap → Restore
+   ══════════════════════════════════════════════ */
 
-function log(...a)  { if (CONFIG.DEBUG) console.log('[MGR]', ...a); }
-function warn(...a) { console.warn('[MGR]', ...a); }
+/**
+ * Convert plain-text math notation to LaTeX.
+ * Handles fractions (including nested parens) and powers.
+ */
+function convertNotation(t) {
+    if (!t) return t;
 
-function show(el) { if (el) el.classList.remove('hidden'); }
-function hide(el) { if (el) el.classList.add('hidden'); }
+    // Nested-paren fractions: 5/(2(x - 3)) → \frac{5}{2(x - 3)}
+    t = t.replace(/(\d+)\s*\/\s*\((\d+\([^()]+\))\)/g, '\\frac{$1}{$2}');
+
+    // (expr)/(expr)
+    t = t.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, '\\frac{$1}{$2}');
+
+    // (expr)/n  e.g. (3x - 2)/4
+    t = t.replace(/\(([^()]+)\)\s*\/\s*(\d+[a-z]?)/g, '\\frac{$1}{$2}');
+
+    // n/(expr)  e.g. 4/(p + 3)
+    t = t.replace(/(\d+)\s*\/\s*\(([^()]+)\)/g, '\\frac{$1}{$2}');
+
+    // var/n  e.g. x/3
+    t = t.replace(/([a-z])\s*\/\s*(\d+)/gi, '\\frac{$1}{$2}');
+
+    // n/n  e.g. 7/12
+    t = t.replace(/(\d+)\s*\/\s*(\d+)/g, '\\frac{$1}{$2}');
+
+    // Powers: ^2 → ^{2}
+    t = t.replace(/\^(\d+)/g, '^{$1}');
+
+    return t;
+}
+
+/**
+ * Format a single answer option.
+ * Options are short and almost always pure math.
+ * Trailing units (cm², km, years) are extracted and kept as plain text.
+ */
+function formatOption(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    let t = raw.trim();
+
+    // Extract trailing unit
+    const unitRe = /\s+(cm\^?2?|cm²|m\^?2?|m²|km\/?h?|km|kg|g|years?|marks?|minutes?|items?)$/i;
+    const um = t.match(unitRe);
+    let unit = '';
+    if (um) {
+        unit = um[0];
+        t = t.slice(0, -unit.length);
+        // Pretty-print unit superscripts
+        unit = unit.replace(/\^2/g, '²').replace(/\^3/g, '³');
+    }
+
+    t = convertNotation(t);
+
+    // Wrap in math delimiters only if it contains variables or operators
+    if (t.trim() && /[a-z+\-*/=^\\]/i.test(t)) {
+        t = '\\(' + t.trim() + '\\)';
+    }
+
+    return t + unit;
+}
+
+/**
+ * Format a full question text (mixed English + math).
+ * Uses the stash-convert-wrap-restore pipeline.
+ */
+function formatQuestionText(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    let t = raw;
+    const vault = [];
+    const save = m => { vault.push(m); return '\x00V' + (vault.length - 1) + '\x00'; };
+
+    /* ── Phase 1: Stash non-math tokens ── */
+
+    // Currency: $21.80, $1.40, $50
+    t = t.replace(/\$\d+(?:\.\d+)?/g, save);
+
+    // Number + unit combos: 58 cm, 60 km/h, 100 cm^2, 40 minutes, 12 years, 4 marks
+    t = t.replace(
+        /\d+\s*(?:km\/h|cm\^2|cm²|m\^2|m²|cm|mm|m|km|kg|g|minutes?|mins?|hours?|hrs?|seconds?|secs?|years?|yrs?|marks?|questions?|items?|pens?|notebooks?)/gi,
+        save
+    );
+
+    // Hyphenated: 30-question
+    t = t.replace(/\d+-(?:question|mark|item|year|minute|hour)/gi, save);
+
+    // Unit after closing paren: ") cm" in "(3x + 1) cm"
+    t = t.replace(/(\))\s+(cm|mm|m|km|kg|g)\b/gi, (_, p, u) => p + save(' ' + u));
+
+    /* ── Phase 2: Convert notation ── */
+    t = convertNotation(t);
+
+    /* ── Phase 3: Wrap math zones ── */
+
+    // Pattern A — instruction colon: "Simplify: 7a - 3[2b - ...]"
+    const colonIdx = t.lastIndexOf(':');
+    if (colonIdx > 5 && colonIdx < t.length - 3) {
+        const prefix   = t.substring(0, colonIdx + 1);
+        let   mathPart = t.substring(colonIdx + 1).trim();
+        if (mathPart && /[a-z]/i.test(mathPart.replace(/\\frac/g, ''))) {
+            t = prefix + ' \\(' + mathPart + '\\)';
+        }
+    } else {
+        // Pattern B — word problem: inline parenthesised expressions with variables
+        t = t.replace(/(\([^)]*[a-z][^)]*\))/gi, m => {
+            if (m.includes('\\(')) return m;
+            return '\\(' + m + '\\)';
+        });
+        // Pattern B2 — digit+variable sequences: "3x + 1"
+        t = t.replace(/((?:\d+[a-z]|[a-z]\d)(?:\s*[+\-*/=]\s*(?:\d+[a-z]?|\d+))*)/gi, m => {
+            if (m.includes('\\(')) return m;
+            return '\\(' + m + '\\)';
+        });
+    }
+
+    /* ── Phase 4: Wrap standalone variables ── */
+    // Catches lone x, y, a, b, p, k, m not already inside \( \)
+    t = t.replace(/(?<![a-zA-Z\\])([xyzabpkm])(?![a-zA-Z{}])/gi, (m, v, offset, str) => {
+        // Skip if already inside \( ... \)
+        const before  = str.substring(Math.max(0, offset - 200), offset);
+        const opens   = (before.match(/\\\(/g) || []).length;
+        const closes  = (before.match(/\\\)/g) || []).length;
+        if (opens > closes) return m;
+
+        // Don't wrap the article "a" in common English contexts
+        if (v.toLowerCase() === 'a') {
+            const ctx = str.substring(Math.max(0, offset - 6), offset).trim().toLowerCase();
+            if (/^(as|is|in|at|to|of|by|or|an|and|was|has|had|per|that|than)$/.test(ctx)) return m;
+        }
+        return '\\(' + v + '\\)';
+    });
+
+    /* ── Phase 5: Restore vault ── */
+    t = t.replace(/\x00V(\d+)\x00/g, (_, i) => vault[parseInt(i)]);
+
+    return t;
+}
+
+/**
+ * Ask MathJax to re-typeset an element.
+ */
+async function typesetMath(el) {
+    if (!el) return;
+    try {
+        if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+            await MathJax.startup.promise;
+            if (MathJax.typesetClear)  MathJax.typesetClear([el]);
+            if (MathJax.typesetPromise) await MathJax.typesetPromise([el]);
+        }
+    } catch (e) {
+        if (CONFIG.DEBUG) console.warn('MathJax typeset error:', e);
+    }
+}
+
+/* ══════════════════════════════════════════════
+   SCHEMA-DRIVEN DATA LOADING
+   ══════════════════════════════════════════════ */
+
+function pick(obj, keys, fallback) {
+    if (fallback === undefined) fallback = '';
+    if (!obj || typeof obj !== 'object') return fallback;
+    for (const k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
+    }
+    return fallback;
+}
+
+function mergeSchema(userSchema) {
+    const base = JSON.parse(JSON.stringify(CONFIG.DEFAULT_SCHEMA));
+    if (!userSchema) return base;
+    for (const level of ['worksheet', 'question']) {
+        if (userSchema[level]) {
+            for (const field of Object.keys(userSchema[level])) {
+                if (base[level][field]) {
+                    base[level][field] = [...userSchema[level][field], ...base[level][field]];
+                }
+            }
+        }
+    }
+    return base;
+}
+
+function normaliseQuestion(raw, index, schema) {
+    if (!raw || typeof raw !== 'object') return null;
+
+    const text = pick(raw, schema.question.text, '').toString().trim();
+    if (!text) {
+        if (CONFIG.DEBUG) console.warn('Q' + index + ': no text. Keys:', Object.keys(raw));
+        return null;
+    }
+
+    let rawOpts = pick(raw, schema.question.options, null);
+    let options = [];
+
+    if (Array.isArray(rawOpts)) {
+        options = rawOpts.map(o => String(o).trim());
+    } else if (rawOpts && typeof rawOpts === 'object') {
+        options = Object.keys(rawOpts).sort().map(k => String(rawOpts[k]).trim());
+    }
+
+    if (options.length < 2) {
+        if (CONFIG.DEBUG) console.warn('Q' + index + ': insufficient options');
+        return null;
+    }
+
+    let correctIndex = -1;
+    const rawAns = pick(raw, schema.question.answer, null);
+
+    if (typeof rawAns === 'number') {
+        correctIndex = (rawAns >= 0 && rawAns < options.length) ? rawAns :
+                       (rawAns >= 1 && rawAns <= options.length) ? rawAns - 1 : -1;
+    } else if (typeof rawAns === 'string') {
+        const num = parseInt(rawAns, 10);
+        if (!isNaN(num)) {
+            correctIndex = (num >= 0 && num < options.length) ? num :
+                           (num >= 1 && num <= options.length) ? num - 1 : -1;
+        } else if (/^[A-Da-d]$/.test(rawAns)) {
+            correctIndex = rawAns.toUpperCase().charCodeAt(0) - 65;
+        } else {
+            correctIndex = options.findIndex(o => o.toLowerCase() === rawAns.toLowerCase());
+        }
+    }
+
+    if (correctIndex < 0 || correctIndex >= options.length) {
+        if (CONFIG.DEBUG) console.warn('Q' + index + ': bad answer', rawAns);
+        return null;
+    }
+
+    return { text, options, correctIndex };
+}
+
+function normaliseWorksheet(raw) {
+    if (!raw) return null;
+    const schema  = mergeSchema(raw.schema);
+    const title   = pick(raw, schema.worksheet.title, 'Untitled Worksheet');
+    const image   = pick(raw, schema.worksheet.image, '');
+    const rawQs   = pick(raw, schema.worksheet.questions, []);
+
+    if (!Array.isArray(rawQs) || rawQs.length === 0) {
+        if (CONFIG.DEBUG) console.warn('No questions found. Keys:', Object.keys(raw));
+        return null;
+    }
+
+    const questions = [];
+    rawQs.forEach((q, i) => {
+        const nq = normaliseQuestion(q, i, schema);
+        if (nq) questions.push(nq);
+    });
+
+    if (questions.length === 0) return null;
+    return { title, image, questions };
+}
+
+/* ── Fetching ── */
+
+async function resolveBase() {
+    if (STATE.baseResolved) return STATE.baseResolved;
+
+    const localBase = './' + CONFIG.QUESTIONS_PATH + '/';
+    try {
+        const r = await fetch(localBase + CONFIG.INDEX_FILE, { method: 'HEAD' });
+        if (r.ok) { STATE.baseResolved = localBase; return localBase; }
+    } catch (_) {}
+
+    const ghBase = 'https://raw.githubusercontent.com/' +
+        CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO + '/' +
+        CONFIG.GITHUB_BRANCH + '/' + CONFIG.QUESTIONS_PATH + '/';
+    STATE.baseResolved = ghBase;
+    return ghBase;
+}
+
+async function fetchJSON(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+}
+
+async function loadWorksheetFile(filePath) {
+    const base = await resolveBase();
+    try { return await fetchJSON(base + filePath); } catch (_) {}
+
+    const filename = filePath.split('/').pop();
+    for (const folder of CONFIG.FALLBACK_FOLDERS) {
+        try {
+            const data = await fetchJSON(base + folder + '/' + filename);
+            if (CONFIG.DEBUG) console.log('Found via fallback:', folder + '/' + filename);
+            return data;
+        } catch (_) {}
+    }
+    throw new Error('Cannot find ' + filename);
+}
+
+/* ══════════════════════════════════════════════
+   SCREEN & UI HELPERS
+   ══════════════════════════════════════════════ */
 
 function showScreen(id) {
-    $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
-    window.scrollTo(0, 0);
+    $$('.screen').forEach(s => s.classList.remove('active'));
+    const el = $('#' + id);
+    if (el) el.classList.add('active');
 }
 
-function timer(fn, ms) {
-    const id = setTimeout(fn, ms);
-    STATE.timers.push(id);
-    return id;
+function showToast(msg, ms) {
+    if (ms === undefined) ms = 2200;
+    const t = $('#toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), ms);
 }
+
 function clearTimers() {
     STATE.timers.forEach(clearTimeout);
     STATE.timers = [];
 }
 
-/* Pick the first non-empty value for any key in `keys` from object `obj`. */
-function pick(obj, keys, fallback = undefined) {
-    if (!obj || !Array.isArray(keys)) return fallback;
-    for (const k of keys) {
-        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') {
-            return obj[k];
-        }
-    }
-    return fallback;
+function addTimer(fn, ms) {
+    const id = setTimeout(fn, ms);
+    STATE.timers.push(id);
+    return id;
 }
 
-/* Merge a user schema with the default. User keys appear first. */
-function mergeSchema(userSchema) {
-    const def = CONFIG.DEFAULT_SCHEMA;
-    const u = userSchema || {};
-    const merge = (user, defaults) => {
-        const out = {};
-        for (const k of Object.keys(defaults)) {
-            const userList = Array.isArray(user[k]) ? user[k] : (user[k] ? [user[k]] : []);
-            const defList = defaults[k];
-            out[k] = [...new Set([...userList, ...defList])];
-        }
-        return out;
-    };
-    return {
-        worksheet: merge(u.worksheet || {}, def.worksheet),
-        question:  merge(u.question  || {}, def.question)
-    };
-}
+/* ══════════════════════════════════════════════
+   LAUNCHER
+   ══════════════════════════════════════════════ */
 
-// ═══════════════ PATH RESOLUTION ═══════════════
-function candidateBases() {
-    const qp = CONFIG.QUESTIONS_PATH || 'Questions';
-    const bases = [`./${qp}`];
-    if (qp !== qp.toLowerCase()) bases.push(`./${qp.toLowerCase()}`);
-    if (CONFIG.GITHUB_USER && CONFIG.GITHUB_REPO) {
-        bases.push(
-            `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}` +
-            `/${CONFIG.GITHUB_REPO}/${CONFIG.GITHUB_BRANCH}/${qp}`
-        );
-    }
-    return bases;
-}
+async function buildLauncher() {
+    const list  = $('#worksheet-list');
+    const errEl = $('#launcher-error');
+    if (!list) return;
 
-async function tryFetchJSON(url) {
     try {
-        const res = await fetch(url, { cache: 'no-cache' });
-        if (!res.ok) { log(`  ✗ ${res.status}  ${url}`); return null; }
-        const data = await res.json();
-        log(`  ✓ 200  ${url}`);
-        return data;
+        const base  = await resolveBase();
+        const index = await fetchJSON(base + CONFIG.INDEX_FILE);
+
+        if (!Array.isArray(index) || index.length === 0) {
+            list.innerHTML = '<p class="loading-msg">No worksheets found.</p>';
+            return;
+        }
+
+        list.innerHTML = '';
+        index.forEach(ws => {
+            const card = document.createElement('button');
+            card.className = 'ws-card';
+            card.innerHTML =
+                '<span class="ws-icon">' + (ws.icon || '📄') + '</span>' +
+                '<span class="ws-info">' +
+                    '<strong>' + (ws.title || 'Untitled') + '</strong>' +
+                    '<small>' + (ws.subject || '') + ' · ' + (ws.topic || '') + ' · ' + (ws.questionCount || '?') + ' Qs</small>' +
+                '</span>';
+            card.addEventListener('click', () => launchGame(ws.file));
+            list.appendChild(card);
+        });
     } catch (e) {
-        log(`  ✗ ERR  ${url}  (${e.message})`);
-        return null;
-    }
-}
-
-async function resolveBase() {
-    const attempted = [];
-    for (const base of candidateBases()) {
-        const url = `${base}/${CONFIG.INDEX_FILE}`;
-        attempted.push(url);
-        const data = await tryFetchJSON(url);
-        if (data) {
-            STATE.baseUrl = base;
-            log('Base URL →', base);
-            return { data, attempted };
+        if (errEl) {
+            errEl.textContent = 'Failed to load worksheets: ' + e.message;
+            errEl.classList.remove('hidden');
         }
+        if (CONFIG.DEBUG) console.error(e);
     }
-    return { data: null, attempted };
 }
 
-async function loadWorksheetFile(filePath) {
-    const attempted = [];
-    const direct = `${STATE.baseUrl}/${filePath}`;
-    attempted.push(direct);
+/* ══════════════════════════════════════════════
+   GAME ENGINE
+   ══════════════════════════════════════════════ */
 
-    let data = await tryFetchJSON(direct);
-    if (data) return { data, attempted, usedPath: filePath };
-
-    const name = filePath.split('/').pop();
-    log(`Direct path failed. Searching folders for "${name}"…`);
-
-    for (const folder of (CONFIG.FALLBACK_FOLDERS || [])) {
-        const alt = `${folder}/${name}`;
-        if (alt === filePath) continue;
-        const url = `${STATE.baseUrl}/${alt}`;
-        attempted.push(url);
-        data = await tryFetchJSON(url);
-        if (data) {
-            warn(`index.json says "${filePath}" but file is at "${alt}".`);
-            return { data, attempted, usedPath: alt };
-        }
-    }
-    return { data: null, attempted, usedPath: null };
-}
-
-// ═══════════════ NORMALISERS ═══════════════
-function normaliseIndex(raw) {
-    const list = Array.isArray(raw) ? raw : (raw.worksheets || raw.items || []);
-    return list.filter(Boolean).map(ws => ({
-        title:   ws.title || ws.name || 'Untitled',
-        icon:    ws.icon || '📄',
-        subject: ws.subject || '',
-        topic:   ws.topic || '',
-        count:   ws.questionCount || ws.count || null,
-        file:    ws.file || ws.path || ''
-    })).filter(ws => ws.file);
-}
-
-/* Normalises a single question using the schema. */
-function normaliseQuestion(raw, i, schema) {
-    const text = String(pick(raw, schema.question.text, '')).trim();
-
-    // ── Options ──
-    let options = pick(raw, schema.question.options, null);
-
-    // Options as A/B/C/D keyed object
-    if (!options && (raw.A || raw.a)) {
-        options = [
-            raw.A ?? raw.a, raw.B ?? raw.b,
-            raw.C ?? raw.c, raw.D ?? raw.d
-        ].filter(v => v != null);
-    }
-    if (!Array.isArray(options)) options = [];
-
-    // Options may be objects
-    let correctFromObject = null;
-    options = options.map((o, idx) => {
-        if (o && typeof o === 'object') {
-            if (o.correct === true || o.isCorrect === true) correctFromObject = idx;
-            return String(o.text ?? o.label ?? o.value ?? o.answer ?? '').trim();
-        }
-        return String(o ?? '').trim();
-    }).filter(o => o !== '');
-
-    // ── Answer ──
-    let answer = pick(raw, schema.question.answer, null);
-    if (answer == null && correctFromObject != null) answer = options[correctFromObject];
-
-    // numeric index
-    if (typeof answer === 'number') {
-        if (options[answer] !== undefined) answer = options[answer];
-        else if (options[answer - 1] !== undefined) answer = options[answer - 1];
-    }
-    if (answer && typeof answer === 'object') {
-        answer = answer.text ?? answer.value ?? answer.label ?? '';
-    }
-    answer = String(answer ?? '').trim();
-
-    // letter A/B/C/D
-    if (/^[A-D]$/i.test(answer) && options.length >= 2 && !options.includes(answer)) {
-        const idx = answer.toUpperCase().charCodeAt(0) - 65;
-        if (options[idx] !== undefined) answer = options[idx];
-    }
-    // numeric string as index
-    if (/^\d+$/.test(answer) && !options.includes(answer)) {
-        const idx = parseInt(answer, 10);
-        if (options[idx] !== undefined) answer = options[idx];
-        else if (options[idx - 1] !== undefined) answer = options[idx - 1];
-    }
-    // fuzzy match
-    if (!options.includes(answer) && answer !== '') {
-        const norm = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-        const target = norm(answer);
-        const hit = options.find(o => norm(o) === target);
-        if (hit) answer = hit;
-    }
-
-    const valid = text !== '' && options.length >= 2 && options.includes(answer);
-
-    if (!valid && i < 3) {
-        warn(
-            `Q${i + 1} rejected:\n` +
-            `  text:    "${text.slice(0, 80)}"\n` +
-            `  options: ${JSON.stringify(options).slice(0, 160)}\n` +
-            `  answer:  "${answer}"\n` +
-            `  rawKeys: [${Object.keys(raw).join(', ')}]`
-        );
-    }
-
-    return { text, options, answer, valid };
-}
-
-function normaliseWorksheet(raw) {
-    const schema = mergeSchema(raw.schema);
-    log('Using schema:', JSON.stringify(schema));
-
-    const qsRaw = pick(raw, schema.worksheet.questions, []);
-    log(`Found ${qsRaw.length} raw questions`);
-
-    const questions = qsRaw.map((q, i) => normaliseQuestion(q, i, schema))
-                           .filter(q => q.valid);
-    const dropped = qsRaw.length - questions.length;
-    if (dropped > 0) warn(`${dropped} question(s) rejected.`);
-
-    return {
-        title:    pick(raw, schema.worksheet.title, ''),
-        image:    pick(raw, schema.worksheet.image, ''),
-        questions
-    };
-}
-
-// ═══════════════ INIT ═══════════════
-async function init() {
-    $('#back-btn').addEventListener('click', backToLauncher);
-    $('#end-back-btn').addEventListener('click', backToLauncher);
-    $('#retry-btn').addEventListener('click', () => {
-        hide($('#end-overlay'));
-        startWorksheet(STATE.filePath, STATE.title);
-    });
-
-    const { data, attempted } = await resolveBase();
-    if (!data) { showLauncherError(attempted); return; }
-
-    STATE.index = normaliseIndex(data);
-    log(`Index: ${STATE.index.length} worksheet(s)`);
-
-    if (STATE.index.length === 0) {
-        showLauncherError(attempted, 'index.json loaded but contains no valid entries.');
-        return;
-    }
-    buildLauncher();
-}
-
-function showLauncherError(attempted, customMsg) {
-    const list = $('#worksheet-list');
-    const box  = $('#launcher-error');
-    if (list) list.innerHTML = '';
-    if (!box) return;
-    box.innerHTML = `
-        <h3>⚠️ Could not load worksheets</h3>
-        <p>${customMsg || 'None of these URLs returned valid JSON:'}</p>
-        <ul>${attempted.map(u => `<li><code>${u}</code></li>`).join('')}</ul>
-        <button class="end-btn" onclick="location.reload()">Reload</button>
-    `;
-    show(box);
-}
-
-// ═══════════════ LAUNCHER ═══════════════
-function buildLauncher() {
-    const container = $('#worksheet-list');
-    container.innerHTML = '';
-    STATE.index.forEach(ws => {
-        const card = document.createElement('button');
-        card.className = 'ws-card';
-        card.type = 'button';
-        card.innerHTML = `
-            <span class="ws-icon">${ws.icon}</span>
-            <span class="ws-body">
-                <span class="ws-title">${ws.title}</span>
-                <span class="ws-meta">${[ws.subject, ws.topic].filter(Boolean).join(' · ')}</span>
-            </span>
-            ${ws.count ? `<span class="ws-count">${ws.count} Qs</span>` : ''}
-        `;
-        card.addEventListener('click', () => startWorksheet(ws.file, ws.title));
-        container.appendChild(card);
-    });
-}
-
-function backToLauncher() {
+async function launchGame(filePath) {
+    if (!filePath) return;
     clearTimers();
-    hide($('#end-overlay'));
-    showScreen('launcher-screen');
+    STATE.currentFilePath = filePath;
+
+    try {
+        const raw = await loadWorksheetFile(filePath);
+        const ws  = normaliseWorksheet(raw);
+        if (!ws) { showToast('Failed to parse worksheet'); return; }
+
+        STATE.worksheet    = ws;
+        STATE.questions    = ws.questions;
+        STATE.total        = ws.questions.length;
+        STATE.currentIndex = 0;
+        STATE.score        = 0;
+        STATE.locked       = false;
+        STATE.gambleActive = false;
+
+        computeGrid();
+        setupGameScreen();
+        showScreen('game-screen');
+        buildGrid();
+        showQuestion();
+    } catch (e) {
+        showToast('Error: ' + e.message);
+        if (CONFIG.DEBUG) console.error(e);
+    }
 }
 
-// ═══════════════ START WORKSHEET ═══════════════
-async function startWorksheet(filePath, title) {
-    clearTimers();
-    hide($('#end-overlay'));
-
-    STATE.filePath = filePath;
-    STATE.title    = title || '';
-    STATE.qIndex   = 0;
-    STATE.correct  = 0;
-    STATE.revealed = new Set();
-    STATE.answered = false;
-    STATE.gambling = false;
-
-    showScreen('game-screen');
-    $('#worksheet-title').textContent = STATE.title;
-    $('#question-text').textContent   = 'Loading…';
-    $('#options-container').innerHTML = '';
-    $('#gamble-slot').innerHTML       = '';
-    $('#progress-tracker').textContent = '';
-
-    const { data, attempted, usedPath } = await loadWorksheetFile(filePath);
-
-    if (!data) {
-        $('#question-text').innerHTML =
-            `<span class="inline-error">⚠️ Worksheet not found.</span><br>
-             <small>Tried:<br>${attempted.map(u => `<code>${u}</code>`).join('<br>')}</small>`;
-        return;
-    }
-
-    if (usedPath !== filePath) STATE.filePath = usedPath;
-
-    STATE.worksheet = normaliseWorksheet(data);
-    STATE.total = STATE.worksheet.questions.length;
-
-    if (STATE.total === 0) {
-        $('#question-text').innerHTML =
-            '<span class="inline-error">⚠️ No valid questions.</span><br>' +
-            '<small>Open the console (F12) and compare your JSON keys to the schema shown.</small>';
-        return;
-    }
-
-    log(`Ready: ${STATE.total} questions`);
-    setupGrid(STATE.worksheet.image);
-    showQuestion(0);
+function computeGrid() {
+    const n    = STATE.total;
+    const cols = Math.ceil(Math.sqrt(n * 1.5));
+    const rows = Math.ceil(n / cols);
+    STATE.gridCols = cols;
+    STATE.gridRows = rows;
 }
 
-// ═══════════════ GRID ═══════════════
-const PLACEHOLDER_IMG =
-    'data:image/svg+xml;utf8,' + encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">' +
-    '<rect width="600" height="400" fill="#1e293b"/>' +
-    '<text x="300" y="205" text-anchor="middle" fill="#64748b" ' +
-    'font-family="sans-serif" font-size="22">Hidden Image</text></svg>');
-
-function gridDims(n, targetAspect = 1.5) {
-    let best = { cols: n, rows: 1, diff: Infinity };
-    for (let cols = 1; cols <= n; cols++) {
-        if (n % cols !== 0) continue;
-        const rows = n / cols;
-        const diff = Math.abs((cols / rows) - targetAspect);
-        if (diff < best.diff) best = { cols, rows, diff };
-    }
-    return best;
+function placeholderSVG() {
+    return 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="533">' +
+        '<rect fill="#16213e" width="800" height="533"/>' +
+        '<text x="400" y="250" text-anchor="middle" fill="#556" font-size="48">🔍</text>' +
+        '<text x="400" y="300" text-anchor="middle" fill="#556" font-size="18" font-family="sans-serif">Mystery Image</text>' +
+        '</svg>'
+    );
 }
 
-function setupGrid(imageUrl) {
-    const img = $('#reveal-image');
-    img.onerror = () => { warn('Image failed:', imageUrl); img.src = PLACEHOLDER_IMG; };
-    img.src = (imageUrl && imageUrl.length > 5) ? imageUrl : PLACEHOLDER_IMG;
+function setupGameScreen() {
+    const ws     = STATE.worksheet;
+    const titleEl = $('#worksheet-title');
+    const imgEl   = $('#reveal-image');
 
-    const grid = $('#grid-overlay');
-    grid.innerHTML = '';
-    grid.classList.remove('glitch-peek');
+    if (titleEl) titleEl.textContent = ws.title;
 
-    const { cols, rows } = gridDims(STATE.total);
-    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    grid.style.gridTemplateRows    = `repeat(${rows}, 1fr)`;
+    if (imgEl) {
+        imgEl.crossOrigin = 'anonymous';
+        imgEl.src = ws.image || placeholderSVG();
+        imgEl.style.display = 'block';
+        imgEl.onerror = function () { this.src = placeholderSVG(); };
+    }
 
-    for (let i = 0; i < STATE.total; i++) {
+    const overlay = $('#end-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+/* ══════════════════════════════════════════════
+   GRID
+   ══════════════════════════════════════════════ */
+
+function buildGrid() {
+    const overlay = $('#grid-overlay');
+    if (!overlay) return;
+
+    overlay.innerHTML = '';
+    overlay.style.gridTemplateColumns = 'repeat(' + STATE.gridCols + ', 1fr)';
+    overlay.style.gridTemplateRows    = 'repeat(' + STATE.gridRows + ', 1fr)';
+
+    const total = STATE.gridCols * STATE.gridRows;
+    STATE.tiles = [];
+
+    for (let i = 0; i < total; i++) {
         const tile = document.createElement('div');
         tile.className = 'grid-tile';
         tile.dataset.index = i;
-        grid.appendChild(tile);
+        overlay.appendChild(tile);
+        STATE.tiles.push(tile);
     }
 }
 
-function hiddenTiles() {
-    const out = [];
-    for (let i = 0; i < STATE.total; i++) if (!STATE.revealed.has(i)) out.push(i);
-    return out;
+function removeRandomTile() {
+    const covered = STATE.tiles.filter(t => !t.classList.contains('revealed'));
+    if (covered.length === 0) return;
+    covered[Math.floor(Math.random() * covered.length)].classList.add('revealed');
 }
 
-function revealTile() {
-    const pool = hiddenTiles();
-    if (!pool.length) return;
-    const idx = pool[Math.floor(Math.random() * pool.length)];
-    STATE.revealed.add(idx);
-    const tile = $(`.grid-tile[data-index="${idx}"]`);
-    if (tile) { tile.classList.remove('gamble-glow'); tile.classList.add('revealed'); }
+function cascadeReveal() {
+    const covered = STATE.tiles.filter(t => !t.classList.contains('revealed'));
+    covered.forEach((tile, i) => {
+        addTimer(() => tile.classList.add('revealed', 'cascade'), i * 80);
+    });
 }
 
-function hideTile() {
-    if (!STATE.revealed.size) return;
-    const arr = [...STATE.revealed];
-    const idx = arr[Math.floor(Math.random() * arr.length)];
-    STATE.revealed.delete(idx);
-    const tile = $(`.grid-tile[data-index="${idx}"]`);
-    if (tile) tile.classList.remove('revealed');
-}
+/* ══════════════════════════════════════════════
+   QUESTIONS
+   ══════════════════════════════════════════════ */
 
-function glitchPeek() {
-    const grid = $('#grid-overlay');
-    grid.classList.add('glitch-peek');
-    timer(() => grid.classList.remove('glitch-peek'), 600);
-}
-
-// ═══════════════ MATH RENDERING ═══════════════
-const MATH_VARS   = /^[xyzabcnmkpqrtuvw]$/i;
-const MATH_START  = /[+\-×÷=^/([\]√∛<>≤≥≠≈\d]/;
-const MATH_CHARS  = /[+\-×÷=^/()[\]√∛<>≤≥≠≈\d\w.]/;
-const AFTER_SPACE = /[+\-×÷=^/([\]√∛<>≤≥≠≈\d]/;
-const VAR_NEXT    = /[\s,.;:!?)+\-=×÷^/<>≤≥≠≈\]]/;
-
-function hasMathOperator(s) { return /[+\-×÷=^/√∛<>≤≥≠≈]/.test(s); }
-
-function isPureExpression(s) {
-    const t = s.trim();
-    if (t.length === 1 && MATH_VARS.test(t)) return true;
-    if (t.length < 2) return false;
-    const stripped = t.replace(/[\s\d().+\-×÷=^/√∛<>≤≥≠≈]/g, '');
-    return hasMathOperator(t) && !stripped.match(/[a-zA-Z]{2,}/);
-}
-
-function wrapMathRuns(text) {
-    if (typeof text !== 'string' || !text) return '';
-    let out = '', i = 0;
-    while (i < text.length) {
-        const ch = text[i];
-        let start = false;
-        if (MATH_START.test(ch)) start = true;
-        else if (MATH_VARS.test(ch)) {
-            const prev = i > 0 ? text[i - 1] : ' ';
-            const next = i < text.length - 1 ? text[i + 1] : ' ';
-            if (/[\s(]/.test(prev) && VAR_NEXT.test(next)) start = true;
-        }
-        if (start) {
-            let j = i;
-            while (j < text.length) {
-                if (text[j] === ' ') {
-                    const k = j + 1;
-                    if (k < text.length && AFTER_SPACE.test(text[k])) { j = k; continue; }
-                    break;
-                }
-                if (MATH_CHARS.test(text[j])) j++; else break;
-            }
-            const run = text.slice(i, j);
-            out += isPureExpression(run) ? `\\(${run}\\)` : run;
-            i = j;
-        } else { out += ch; i++; }
-    }
-    return out;
-}
-
-function wrapStandaloneVars(text) {
-    if (typeof text !== 'string' || !text) return '';
-    const parts = text.split(/(\\\([\s\S]*?\\\))/g);
-    for (let i = 0; i < parts.length; i++) {
-        if (parts[i].startsWith('\\(')) continue;
-        parts[i] = parts[i].replace(/\b([xyz])\b/g, '\\($1\\)');
-    }
-    return parts.join('');
-}
-
-function processMath(text) { return wrapStandaloneVars(wrapMathRuns(text)); }
-
-function renderMath(el) {
-    if (!window.MathJax || !el) return;
-    const run = () => {
-        try {
-            if (MathJax.typesetClear) MathJax.typesetClear([el]);
-            MathJax.typesetPromise([el]).catch(e => warn('MathJax:', e.message));
-        } catch (e) { warn('MathJax:', e.message); }
-    };
-    if (MathJax.startup && MathJax.startup.promise) {
-        MathJax.startup.promise.then(run).catch(run);
-    } else { run(); }
-}
-
-// ═══════════════ QUESTIONS ═══════════════
-function shuffle(arr) {
+function shuffleArray(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -510,157 +508,179 @@ function shuffle(arr) {
     return a;
 }
 
-function showQuestion(index) {
-    clearTimers();
-    if (index >= STATE.total) { finishGame(); return; }
+function showQuestion() {
+    if (STATE.currentIndex >= STATE.total) { endGame(); return; }
 
-    STATE.qIndex = index;
-    STATE.answered = false;
-    STATE.gambling = false;
+    STATE.locked       = false;
+    STATE.gambleActive = false;
 
-    const q = STATE.worksheet.questions[index];
-    $('#question-text').innerHTML = processMath(q.text);
+    const q          = STATE.questions[STATE.currentIndex];
+    const qTextEl    = $('#question-text');
+    const optsEl     = $('#options-container');
+    const progEl     = $('#progress-tracker');
+    const gambleSlot = $('#gamble-slot');
 
-    const box = $('#options-container');
-    box.innerHTML = '';
-    const opts = CONFIG.SHUFFLE_OPTIONS ? shuffle(q.options) : q.options;
-    opts.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'opt-btn';
-        btn.type = 'button';
-        btn.dataset.value = opt;
-        btn.innerHTML = processMath(opt);
-        btn.addEventListener('click', () => checkAnswer(opt, q.answer));
-        box.appendChild(btn);
-    });
+    /* Question text */
+    if (qTextEl) {
+        qTextEl.innerHTML = formatQuestionText(q.text);
+        typesetMath(qTextEl);
+    }
 
-    $('#gamble-slot').innerHTML = '';
-    updateProgress();
-    renderMath($('.question-panel'));
+    /* Progress */
+    if (progEl) {
+        progEl.textContent = 'Question ' + (STATE.currentIndex + 1) + ' of ' + STATE.total +
+                             '  ·  Score: ' + STATE.score;
+    }
 
-    if (CONFIG.GAMBLE_ENABLED && STATE.revealed.size > 0 && hiddenTiles().length > 0) {
-        offerGamble();
+    /* Gamble */
+    if (gambleSlot) {
+        gambleSlot.innerHTML = '';
+        if (CONFIG.GAMBLE_ENABLED && STATE.currentIndex > 0) {
+            const btn = document.createElement('button');
+            btn.className = 'gamble-btn';
+            btn.textContent = '🎲 Bet a tile? (+' + CONFIG.GAMBLE_REWARD +
+                              ' if correct, −' + CONFIG.GAMBLE_PENALTY + ' if wrong)';
+            btn.addEventListener('click', () => {
+                STATE.gambleActive = true;
+                btn.disabled = true;
+                btn.textContent = '🎲 Bet placed!';
+                btn.classList.add('active');
+            });
+            gambleSlot.appendChild(btn);
+        }
+    }
+
+    /* Options */
+    if (optsEl) {
+        optsEl.innerHTML = '';
+        const indices  = q.options.map((_, i) => i);
+        const shuffled = CONFIG.SHUFFLE_OPTIONS ? shuffleArray(indices) : indices;
+
+        shuffled.forEach(origIdx => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = formatOption(q.options[origIdx]);
+            btn.dataset.origIndex = origIdx;
+            btn.addEventListener('click', () => handleAnswer(origIdx, btn));
+            optsEl.appendChild(btn);
+        });
+
+        typesetMath(optsEl);
     }
 }
 
-function updateProgress() {
-    $('#progress-tracker').textContent =
-        `Question ${STATE.qIndex + 1} of ${STATE.total}  ·  Score ${STATE.correct}  ·  Target ${winTarget()}`;
-}
+function handleAnswer(chosenIdx, btnEl) {
+    if (STATE.locked) return;
+    STATE.locked = true;
 
-// ═══════════════ GAMBLE ═══════════════
-function offerGamble() {
-    const slot = $('#gamble-slot');
-    slot.innerHTML = `
-        <div class="gamble-prompt">
-            <p>🎰 <strong>Bet a tile?</strong>
-               Correct → +${CONFIG.GAMBLE_REWARD} · Wrong → −${CONFIG.GAMBLE_PENALTY}</p>
-            <div class="gamble-actions">
-                <button type="button" class="gamble-yes">Bet</button>
-                <button type="button" class="gamble-no">Pass</button>
-            </div>
-        </div>`;
-    slot.querySelector('.gamble-yes').addEventListener('click', () => {
-        STATE.gambling = true;
-        slot.innerHTML = '<div class="gamble-active">🎰 Bet placed!</div>';
-        const pool = hiddenTiles();
-        if (pool.length) {
-            const idx = pool[Math.floor(Math.random() * pool.length)];
-            const tile = $(`.grid-tile[data-index="${idx}"]`);
-            if (tile) tile.classList.add('gamble-glow');
+    const q       = STATE.questions[STATE.currentIndex];
+    const correct = chosenIdx === q.correctIndex;
+    const allBtns = $$('.option-btn');
+
+    allBtns.forEach(b => {
+        b.disabled = true;
+        if (parseInt(b.dataset.origIndex) === q.correctIndex) b.classList.add('correct');
+    });
+
+    if (correct) {
+        btnEl.classList.add('correct');
+        STATE.score++;
+        removeRandomTile();
+        if (STATE.gambleActive) {
+            for (let i = 0; i < CONFIG.GAMBLE_REWARD; i++) removeRandomTile();
+            showToast('🎲 Gamble won! +' + (CONFIG.GAMBLE_REWARD + 1) + ' tiles!');
+        } else {
+            showToast('✅ Correct!');
         }
-    });
-    slot.querySelector('.gamble-no').addEventListener('click', () => {
-        STATE.gambling = false;
-        slot.innerHTML = '';
-    });
-}
-
-// ═══════════════ ANSWER ═══════════════
-function checkAnswer(selected, correct) {
-    if (STATE.answered) return;
-    STATE.answered = true;
-
-    const isRight = selected === correct;
-    $$('#options-container .opt-btn').forEach(btn => {
-        btn.disabled = true;
-        if (btn.dataset.value === correct) btn.classList.add('correct');
-        if (btn.dataset.value === selected && !isRight) btn.classList.add('wrong');
-    });
-    $$('.grid-tile.gamble-glow').forEach(t => t.classList.remove('gamble-glow'));
-
-    if (isRight) {
-        STATE.correct++;
-        if (STATE.gambling) {
-            for (let i = 0; i < CONFIG.GAMBLE_REWARD; i++) revealTile();
-            toast(`🎰 Jackpot! +${CONFIG.GAMBLE_REWARD} tiles`);
-        } else { revealTile(); }
+        addTimer(() => { STATE.currentIndex++; showQuestion(); }, CONFIG.DELAY_CORRECT);
     } else {
-        if (STATE.gambling) {
-            for (let i = 0; i < CONFIG.GAMBLE_PENALTY; i++) hideTile();
-            toast(`😬 Lost ${CONFIG.GAMBLE_PENALTY} tile`);
+        btnEl.classList.add('wrong');
+
+        // Glitch-peek a random tile
+        const covered = STATE.tiles.filter(t => !t.classList.contains('revealed'));
+        if (covered.length > 0) {
+            const peek = covered[Math.floor(Math.random() * covered.length)];
+            peek.classList.add('glitch');
+            addTimer(() => peek.classList.remove('glitch'), 800);
         }
-        glitchPeek();
-    }
 
-    updateProgress();
-    timer(() => showQuestion(STATE.qIndex + 1),
-          isRight ? CONFIG.DELAY_CORRECT : CONFIG.DELAY_WRONG);
-}
-
-// ═══════════════ END GAME ═══════════════
-function winTarget() {
-    const t = CONFIG.WIN_THRESHOLD;
-    if (t >= 1) return Math.min(Math.round(t), STATE.total);
-    return Math.ceil(STATE.total * t);
-}
-
-function finishGame() {
-    const won = STATE.correct >= winTarget();
-    if (!won) { endGame(false); return; }
-    const pool = hiddenTiles();
-    pool.forEach((idx, i) => {
-        timer(() => {
-            STATE.revealed.add(idx);
-            const tile = $(`.grid-tile[data-index="${idx}"]`);
-            if (tile) {
-                tile.classList.add('cascade-reveal');
-                timer(() => tile.classList.add('revealed'), 450);
+        if (STATE.gambleActive) {
+            for (let i = 0; i < CONFIG.GAMBLE_PENALTY; i++) {
+                const rev = STATE.tiles.filter(t => t.classList.contains('revealed'));
+                if (rev.length > 0) rev[Math.floor(Math.random() * rev.length)].classList.remove('revealed');
             }
-        }, i * 70);
-    });
-    timer(() => endGame(true), pool.length * 70 + 700);
-}
+            showToast('🎲 Gamble lost! −' + CONFIG.GAMBLE_PENALTY + ' tile(s)');
+        } else {
+            showToast('❌ Wrong!');
+        }
 
-function endGame(didWin) {
-    const total = STATE.total, got = STATE.correct, need = winTarget();
-    const pct = Math.round((got / total) * 100);
-    let title, msg;
-    if (didWin && got === total) {
-        title = '🏆 Perfect Score!';
-        msg = `All ${total} correct.`;
-    } else if (didWin) {
-        title = '🎉 Image Unlocked!';
-        msg = `${got} / ${total} correct (${pct}%). Needed ${need}.`;
-    } else {
-        title = '🔒 Not Quite';
-        msg = `${got} / ${total} correct (${pct}%). Needed ${need}.`;
+        addTimer(() => { STATE.currentIndex++; showQuestion(); }, CONFIG.DELAY_WRONG);
     }
-    $('#end-title').textContent = title;
-    $('#end-message').textContent = msg;
-    $('#retry-btn').classList.toggle('hidden', didWin);
-    show($('#end-overlay'));
 }
 
-// ═══════════════ TOAST ═══════════════
-let toastTimer = null;
-function toast(msg) {
-    const el = $('#toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+/* ══════════════════════════════════════════════
+   END GAME
+   ══════════════════════════════════════════════ */
+
+function endGame() {
+    clearTimers();
+    const needed = Math.ceil(STATE.total * CONFIG.WIN_THRESHOLD);
+    const won    = STATE.score >= needed;
+
+    const overlay  = $('#end-overlay');
+    const titleEl  = $('#end-title');
+    const msgEl    = $('#end-message');
+    const retryBtn = $('#retry-btn');
+
+    if (won) {
+        cascadeReveal();
+        if (titleEl) titleEl.textContent = '🎉 Image Revealed!';
+        if (msgEl)   msgEl.textContent   = 'You scored ' + STATE.score + '/' + STATE.total +
+            ' (' + Math.round(STATE.score / STATE.total * 100) + '%). Amazing!';
+        if (retryBtn) retryBtn.classList.add('hidden');
+    } else {
+        if (titleEl) titleEl.textContent = '😔 Not Quite…';
+        if (msgEl)   msgEl.textContent   = 'You scored ' + STATE.score + '/' + STATE.total +
+            '. You needed ' + needed + ' to reveal the image. Try again!';
+        if (retryBtn) retryBtn.classList.remove('hidden');
+    }
+
+    if (overlay) overlay.classList.remove('hidden');
 }
 
-// ═══════════════ BOOT ═══════════════
-document.addEventListener('DOMContentLoaded', init);
+function goBackToLauncher() {
+    clearTimers();
+    const overlay = $('#end-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    showScreen('launcher-screen');
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    const backBtn    = $('#back-btn');
+    const endBackBtn = $('#end-back-btn');
+    const retryBtn   = $('#retry-btn');
+
+    if (backBtn)    backBtn.addEventListener('click', goBackToLauncher);
+    if (endBackBtn) endBackBtn.addEventListener('click', goBackToLauncher);
+
+    if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+            const overlay = $('#end-overlay');
+            if (overlay) overlay.classList.add('hidden');
+            if (STATE.currentFilePath) launchGame(STATE.currentFilePath);
+        });
+    }
+
+    // Auto-retry from previous session
+    const retryPath = sessionStorage.getItem('mgr_retry');
+    if (retryPath) {
+        sessionStorage.removeItem('mgr_retry');
+        launchGame(retryPath);
+    } else {
+        buildLauncher();
+    }
+});
