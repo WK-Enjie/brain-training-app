@@ -37,7 +37,7 @@
 }
 
 html {
-    font-size: 16px;           /* prevents iOS auto-zoom on focus */
+    font-size: 16px;
     -webkit-text-size-adjust: 100%;
 }
 
@@ -131,7 +131,7 @@ body {
                 border-color var(--transition-fast);
     text-decoration: none;
     color: var(--color-text);
-    min-height: 48px;              /* touch target */
+    min-height: 48px;
 }
 .worksheet-card:hover,
 .worksheet-card:focus-visible {
@@ -191,7 +191,6 @@ body {
     border-radius: var(--radius-lg);
 }
 
-/* Gamble-active glow */
 .game-container.gamble-active {
     box-shadow: 0 0 20px var(--color-gamble-glow),
                 0 0 40px rgba(245, 158, 11, 0.15);
@@ -284,7 +283,6 @@ body {
     animation: recover 0.8s ease;
 }
 
-/* Glitch on the whole overlay */
 #grid-overlay.glitch {
     animation: glitch 0.6s ease;
 }
@@ -308,7 +306,6 @@ body {
     padding: 0.5rem 0;
 }
 
-/* MathJax overflow safety */
 #question-text mjx-container,
 .option-btn mjx-container {
     overflow-x: auto;
@@ -568,7 +565,6 @@ body {
    RESPONSIVE BREAKPOINTS
    ═══════════════════════════════════════════════════════ */
 
-/* Small phones (< 375px) */
 @media (max-width: 374px) {
     .launcher-container h1 { font-size: 1.3rem; }
     #question-text { font-size: 0.88rem; }
@@ -576,7 +572,6 @@ body {
     .gamble-text { font-size: 1rem; }
 }
 
-/* Larger phones / small tablets (≥ 481px) */
 @media (min-width: 481px) {
     #options-container {
         display: grid;
@@ -588,7 +583,6 @@ body {
     .game-container { padding: 0.75rem; }
 }
 
-/* Desktop (≥ 769px) */
 @media (min-width: 769px) {
     .game-container { padding: 1rem; }
     #question-text { font-size: 1.05rem; }
@@ -596,7 +590,6 @@ body {
     .launcher-container h1 { font-size: 2rem; }
 }
 
-/* Landscape on small devices */
 @media (max-height: 500px) and (orientation: landscape) {
     #image-reveal-container { aspect-ratio: 21 / 9; }
     .question-panel { padding: 0.35rem 0.25rem; gap: 0.35rem; }
@@ -625,39 +618,56 @@ body {
     .grid-tile.revealed { background: Canvas; }
 }
 
-/* ─── MathJax Grey Highlight Fix ─── */
+/* ═══════════════════════════════════════════════════════
+   MATHJAX GREY BAR FIX
+   Kills ghost backgrounds, borders, and assistive layers
+   that MathJax SVG containers create in some browsers.
+   ═══════════════════════════════════════════════════════ */
 mjx-container,
-mjx-container[jax="SVG"] {
+mjx-container[jax="SVG"],
+mjx-container[jax="SVG"][display="true"] {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    display: inline !important;
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 0 1px !important;
+    outline: none !important;
 }
 
 mjx-container svg {
     display: inline !important;
     overflow: visible !important;
+    background: transparent !important;
 }
 
-/* Hide MathJax assistive markup that can cause visual glitches */
+mjx-container svg rect {
+    fill: currentColor !important;
+}
+
+mjx-container svg line,
+mjx-container svg path {
+    stroke: currentColor !important;
+}
+
 mjx-assistive-mml {
     display: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
 }
 
-/* Remove any grey highlight on MathJax focus/hover */
 mjx-container:focus,
-mjx-container:hover {
+mjx-container:hover,
+mjx-container:active {
     background: transparent !important;
     outline: none !important;
+    box-shadow: none !important;
 }
 
-/* Ensure option buttons don't get grey patches from MathJax */
-.option-btn mjx-container {
-    vertical-align: middle !important;
-}
-
+.option-btn mjx-container,
 #question-text mjx-container {
+    background: transparent !important;
     vertical-align: baseline !important;
 }
