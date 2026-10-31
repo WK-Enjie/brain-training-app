@@ -1,11 +1,12 @@
 /* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — script.js  (v3.1)
-   Math parser · Grid engine · Gamble mechanics
+   MYSTERY GRID REVEAL — script.js  (v4)
+   Math parser · Grid engine · Gamble mechanics · Threshold win
    ═══════════════════════════════════════════════════════ */
 
 const STATE = {
     dataset: null,
     currentIndex: 0,
+    correctCount: 0,
     shuffledTiles: [],
     revealedHistory: [],
     gambleMode: false,
@@ -36,10 +37,7 @@ const UNIT_LIST = [
     ['m/s',      '\\text{m/s}']
 ];
 
-const UPRIGHT_WORDS = [
-    'HCF','LCM','sin','cos','tan','log','ln'
-];
-
+const UPRIGHT_WORDS = ['HCF','LCM','sin','cos','tan','log','ln'];
 const PH_OPEN  = '\u0001';
 const PH_CLOSE = '\u0002';
 
@@ -131,23 +129,17 @@ function convertScripts(s) {
 
 function convertUprightWords(s) {
     for (const w of UPRIGHT_WORDS) {
-        const re = new RegExp('\\b' + w + '\\b', 'g');
-        s = s.replace(re, '\\text{' + w + '}');
+        s = s.replace(new RegExp('\\b' + w + '\\b', 'g'), '\\text{' + w + '}');
     }
     return s;
 }
 
 function convertSymbols(s) {
-    s = s.replace(/×/g, '\\times ');
-    s = s.replace(/÷/g, '\\div ');
-    s = s.replace(/≤/g, '\\le ');
-    s = s.replace(/≥/g, '\\ge ');
-    s = s.replace(/≠/g, '\\ne ');
-    s = s.replace(/≈/g, '\\approx ');
-    s = s.replace(/<=/g, '\\le ');
-    s = s.replace(/>=/g, '\\ge ');
-    s = s.replace(/!=/g, '\\ne ');
-    s = s.replace(/−/g, '-');
+    s = s.replace(/×/g, '\\times ').replace(/÷/g, '\\div ');
+    s = s.replace(/≤/g, '\\le ').replace(/>=/g, '\\ge ');
+    s = s.replace(/≠/g, '\\ne ').replace(/≈/g, '\\approx ');
+    s = s.replace(/<=/g, '\\le ').replace(/>=/g, '\\ge ');
+    s = s.replace(/!=/g, '\\ne ').replace(/−/g, '-');
     return s;
 }
 
@@ -175,39 +167,27 @@ function isPureExpression(s) {
     return true;
 }
 
-// ── Math-in-prose detector (v3.1 — character scanner) ──
-// Scans character-by-character to find contiguous math expressions
-// within prose text. Keeps "(3x - 2)/4" together instead of
-// splitting on spaces like the old token-based approach.
-
 function wrapMathRuns(text) {
     const MATH_START = /[+\-×÷=^/(√∛<>≤≥≠≈\d]/;
     const MATH_CHARS = /[+\-×÷=^/()√∛<>≤≥≠≈\d\w.]/;
     const MATH_OPS   = /[+\-×÷=^/√∛<>≤≥≠≈]/;
-
     let result = '';
     let i = 0;
 
     while (i < text.length) {
-        // Detect start of a math expression:
-        // - Must be a math-start character (digit, operator, open paren)
-        // - Must NOT be immediately after a letter (avoids catching "x3" in "box3")
         if (MATH_START.test(text[i]) && !(i > 0 && /[a-zA-Z]/.test(text[i - 1]))) {
             let end = i;
             let hasOp = false;
-
-            // Extend through math characters and internal spaces
             while (end < text.length) {
                 if (MATH_CHARS.test(text[end])) {
                     if (MATH_OPS.test(text[end])) hasOp = true;
                     end++;
                 } else if (text[end] === ' ' && end + 1 < text.length && MATH_CHARS.test(text[end + 1])) {
-                    end++; // include space within math expression
+                    end++;
                 } else {
                     break;
                 }
             }
-
             const segment = text.slice(i, end).trim();
             if (hasOp && segment.length > 1) {
                 result += '\\(' + toLatex(segment) + '\\)';
@@ -220,32 +200,23 @@ function wrapMathRuns(text) {
             i++;
         }
     }
-
     return result;
 }
-
-// ── PUBLIC ENTRY POINT ──
 
 function parseMathToLatex(raw) {
     if (!raw || typeof raw !== 'string') return raw;
     try {
         let s = raw;
-
-        // 1. Protect currency: $21.80  $5  $1.40
         const currencySlots = [];
         s = s.replace(/\$(\s?\d[\d,.]*)/g, (_, g) => {
             currencySlots.push('$' + g);
             return PH_OPEN + 'CUR' + (currencySlots.length - 1) + PH_CLOSE;
         });
-
-        // 2. Protect explicit $...$ math (if any)
         const explicitSlots = [];
         s = s.replace(/\$([^$]+)\$/g, (_, g) => {
             explicitSlots.push('\\(' + toLatex(g) + '\\)');
             return PH_OPEN + 'EXP' + (explicitSlots.length - 1) + PH_CLOSE;
         });
-
-        // 3. Protect compound units — keep as plain text
         const unitSlots = [];
         for (const [unit] of UNIT_LIST) {
             const esc = unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -254,22 +225,14 @@ function parseMathToLatex(raw) {
                 return PH_OPEN + 'UNT' + (unitSlots.length - 1) + PH_CLOSE;
             });
         }
-
-        // 4. Convert math
         if (isPureExpression(s)) {
             s = '\\(' + toLatex(s) + '\\)';
         } else {
             s = wrapMathRuns(s);
         }
-
-        // 5. Restore placeholders
-        s = s.replace(new RegExp(PH_OPEN + 'UNT(\\d+)' + PH_CLOSE, 'g'),
-            (_, i) => unitSlots[+i]);
-        s = s.replace(new RegExp(PH_OPEN + 'EXP(\\d+)' + PH_CLOSE, 'g'),
-            (_, i) => explicitSlots[+i]);
-        s = s.replace(new RegExp(PH_OPEN + 'CUR(\\d+)' + PH_CLOSE, 'g'),
-            (_, i) => currencySlots[+i]);
-
+        s = s.replace(new RegExp(PH_OPEN + 'UNT(\\d+)' + PH_CLOSE, 'g'), (_, i) => unitSlots[+i]);
+        s = s.replace(new RegExp(PH_OPEN + 'EXP(\\d+)' + PH_CLOSE, 'g'), (_, i) => explicitSlots[+i]);
+        s = s.replace(new RegExp(PH_OPEN + 'CUR(\\d+)' + PH_CLOSE, 'g'), (_, i) => currencySlots[+i]);
         return s;
     } catch (e) {
         console.warn('Math parse fallback:', e);
@@ -280,12 +243,8 @@ function parseMathToLatex(raw) {
 async function typesetMath(element) {
     if (!element) return;
     try {
-        if (window.MathJax && MathJax.typesetClear) {
-            MathJax.typesetClear([element]);
-        }
-        if (window.MathJax && MathJax.typesetPromise) {
-            await MathJax.typesetPromise([element]);
-        }
+        if (window.MathJax && MathJax.typesetClear) MathJax.typesetClear([element]);
+        if (window.MathJax && MathJax.typesetPromise) await MathJax.typesetPromise([element]);
     } catch (e) {
         console.warn('MathJax typeset error:', e);
     }
@@ -302,6 +261,18 @@ function shuffleArray(arr) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+}
+
+function getWinTarget() {
+    const total = STATE.dataset.questions.length;
+    const t = CONFIG.WIN_THRESHOLD;
+    if (typeof t === 'number' && t > 0 && t < 1) {
+        return Math.ceil(total * t);
+    }
+    if (typeof t === 'number' && t >= 1) {
+        return Math.min(Math.floor(t), total);
+    }
+    return total; // fallback: all correct
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -365,6 +336,7 @@ async function startWorksheet(filePath) {
         }
         STATE.dataset = data;
         STATE.currentIndex = 0;
+        STATE.correctCount = 0;
         STATE.revealedHistory = [];
         STATE.gambleMode = false;
         STATE.isAnswering = false;
@@ -449,10 +421,12 @@ async function loadQuestion() {
         optContainer.appendChild(btn);
     });
 
+    // Progress shows correct count vs win target
     const total = STATE.dataset.questions.length;
+    const target = getWinTarget();
     const revealed = STATE.revealedHistory.length;
     const tileTotal = document.querySelectorAll('.grid-tile').length;
-    progressEl.textContent = `Question ${STATE.currentIndex + 1} of ${total} · ${revealed}/${tileTotal} tiles revealed`;
+    progressEl.textContent = `Q${STATE.currentIndex + 1}/${total} · ✅ ${STATE.correctCount}/${target} to unlock · 🧩 ${revealed}/${tileTotal} tiles`;
 
     await typesetMath(qTextEl);
     await typesetMath(optContainer);
@@ -463,7 +437,7 @@ async function loadQuestion() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 7 — ANSWER CHECKING
+   SECTION 7 — ANSWER CHECKING (v4: threshold win)
    ═══════════════════════════════════════════════════════ */
 
 function checkAnswer(selectedIndex) {
@@ -480,13 +454,18 @@ function checkAnswer(selectedIndex) {
 
     if (isCorrect) {
         buttons[selectedIndex].classList.add('correct');
+        STATE.correctCount++;
         const wasGambling = STATE.gambleMode;
         revealTile(wasGambling ? 2 : 1);
         STATE.gambleMode = false;
         document.querySelector('.game-container')?.classList.remove('gamble-active');
 
-        if (wasGambling) {
-            showEncouragement('gamble-win');
+        if (wasGambling) showEncouragement('gamble-win');
+
+        // Check win threshold
+        if (STATE.correctCount >= getWinTarget()) {
+            setTimeout(() => cascadeRevealAndEnd(), 600);
+            return;
         }
 
         setTimeout(() => {
@@ -510,7 +489,12 @@ function checkAnswer(selectedIndex) {
 
         setTimeout(() => {
             STATE.currentIndex++;
-            loadQuestion();
+            // Check if we've run out of questions without hitting threshold
+            if (STATE.currentIndex >= STATE.dataset.questions.length) {
+                cascadeRevealAndEnd();
+            } else {
+                loadQuestion();
+            }
         }, 1500);
     }
 }
@@ -535,10 +519,11 @@ function revealTile(count) {
 
 function updateProgress() {
     const total = STATE.dataset.questions.length;
+    const target = getWinTarget();
     const revealed = STATE.revealedHistory.length;
     const tileTotal = document.querySelectorAll('.grid-tile').length;
     const el = document.getElementById('progress-tracker');
-    if (el) el.textContent = `Question ${STATE.currentIndex + 1} of ${total} · ${revealed}/${tileTotal} tiles revealed`;
+    if (el) el.textContent = `Q${STATE.currentIndex + 1}/${total} · ✅ ${STATE.correctCount}/${target} to unlock · 🧩 ${revealed}/${tileTotal} tiles`;
 }
 
 function triggerGlitchPeek() {
@@ -647,15 +632,60 @@ function showEncouragement(type) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 9 — END GAME
+   SECTION 9 — CASCADE REVEAL & END GAME (v4)
    ═══════════════════════════════════════════════════════ */
 
+function cascadeRevealAndEnd() {
+    // Find all tiles still covered
+    const remaining = [];
+    document.querySelectorAll('.grid-tile').forEach(tile => {
+        if (!tile.classList.contains('revealed')) {
+            remaining.push(tile);
+        }
+    });
+
+    if (remaining.length === 0) {
+        endGame();
+        return;
+    }
+
+    // Stagger the reveal: each tile flips away 80ms after the previous
+    remaining.forEach((tile, i) => {
+        setTimeout(() => {
+            tile.classList.add('cascade-reveal');
+        }, i * 80);
+    });
+
+    // After all tiles have animated, show end screen
+    const totalDelay = remaining.length * 80 + 600;
+    setTimeout(() => endGame(), totalDelay);
+}
+
 function endGame() {
+    // Make sure ALL tiles are revealed
+    document.querySelectorAll('.grid-tile').forEach(tile => {
+        tile.classList.add('revealed');
+        tile.classList.remove('cascade-reveal');
+    });
+
+    const target = getWinTarget();
+    const total = STATE.dataset.questions.length;
+    const score = STATE.correctCount;
+
+    let message = '';
+    if (score >= total) {
+        message = 'Perfect score! Every tile unlocked! 🏆';
+    } else if (score >= target) {
+        message = `You got ${score}/${total} right — image unlocked! 🎉`;
+    } else {
+        message = `You got ${score}/${total} right. The full image is revealed anyway! 💪`;
+    }
+
     const panel = document.querySelector('.question-panel');
     panel.innerHTML = `
         <div class="end-game-panel">
             <h2>🎉 Worksheet Complete!</h2>
-            <p>You revealed the entire image. Great work!</p>
+            <p>${message}</p>
             <button id="back-to-launcher">← Choose Another Worksheet</button>
         </div>`;
     document.getElementById('back-to-launcher').addEventListener('click', () => {
