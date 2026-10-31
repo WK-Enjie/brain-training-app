@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — script.js  (v4.1)
+   MYSTERY GRID REVEAL — script.js  (v4.2)
    Math parser · Grid engine · Gamble mechanics · Threshold win
    ═══════════════════════════════════════════════════════ */
 
@@ -167,34 +167,11 @@ function isPureExpression(s) {
     return true;
 }
 
-// ── Math-in-prose scanner (v4.1) ──
-//
-// Fixes two bugs from v3.1:
-//   1. [ ] were missing from MATH_CHARS, breaking expressions
-//      like "3[2b - (4a - 5b)]" into floating fragments.
-//   2. Spaces before English letters extended the math run into
-//      prose, making words like "cm and width" render in italic
-//      TeX font (the "cursive" look).
-//
-// New rule: a space is only included in the math run if the
-// character AFTER the space is a digit, operator, or bracket —
-// NOT a letter. This keeps "4(3x - 5) - 2(x - 7)" together
-// but stops "(3x + 1) cm and width" at the space before "cm".
-
 function wrapMathRuns(text) {
-    // Characters that can START a math run
     const MATH_START = /[+\-×÷=^/([\]√∛<>≤≥≠≈\d]/;
-
-    // Characters that can CONTINUE a math run (includes letters for variables like 3x)
     const MATH_CHARS = /[+\-×÷=^/()[\]√∛<>≤≥≠≈\d\w.]/;
-
-    // Operators that prove a run is "math" (not just a bare number)
     const MATH_OPS   = /[+\-×÷=^/√∛<>≤≥≠≈]/;
-
-    // Characters allowed AFTER a space to continue the run
-    // (digits, operators, brackets — but NOT letters)
     const AFTER_SPACE = /[+\-×÷=^/([\]√∛<>≤≥≠≈\d]/;
-
     let result = '';
     let i = 0;
 
@@ -202,19 +179,16 @@ function wrapMathRuns(text) {
         if (MATH_START.test(text[i]) && !(i > 0 && /[a-zA-Z]/.test(text[i - 1]))) {
             let end = i;
             let hasOp = false;
-
             while (end < text.length) {
                 if (MATH_CHARS.test(text[end])) {
                     if (MATH_OPS.test(text[end])) hasOp = true;
                     end++;
                 } else if (text[end] === ' ' && end + 1 < text.length && AFTER_SPACE.test(text[end + 1])) {
-                    // Only cross a space if next char is digit/operator/bracket
                     end++;
                 } else {
                     break;
                 }
             }
-
             const segment = text.slice(i, end).trim();
             if (hasOp && segment.length > 1) {
                 result += '\\(' + toLatex(segment) + '\\)';
@@ -227,29 +201,23 @@ function wrapMathRuns(text) {
             i++;
         }
     }
-
     return result;
 }
-
-// ── PUBLIC ENTRY POINT ──
 
 function parseMathToLatex(raw) {
     if (!raw || typeof raw !== 'string') return raw;
     try {
         let s = raw;
-
         const currencySlots = [];
         s = s.replace(/\$(\s?\d[\d,.]*)/g, (_, g) => {
             currencySlots.push('$' + g);
             return PH_OPEN + 'CUR' + (currencySlots.length - 1) + PH_CLOSE;
         });
-
         const explicitSlots = [];
         s = s.replace(/\$([^$]+)\$/g, (_, g) => {
             explicitSlots.push('\\(' + toLatex(g) + '\\)');
             return PH_OPEN + 'EXP' + (explicitSlots.length - 1) + PH_CLOSE;
         });
-
         const unitSlots = [];
         for (const [unit] of UNIT_LIST) {
             const esc = unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -258,17 +226,14 @@ function parseMathToLatex(raw) {
                 return PH_OPEN + 'UNT' + (unitSlots.length - 1) + PH_CLOSE;
             });
         }
-
         if (isPureExpression(s)) {
             s = '\\(' + toLatex(s) + '\\)';
         } else {
             s = wrapMathRuns(s);
         }
-
         s = s.replace(new RegExp(PH_OPEN + 'UNT(\\d+)' + PH_CLOSE, 'g'), (_, i) => unitSlots[+i]);
         s = s.replace(new RegExp(PH_OPEN + 'EXP(\\d+)' + PH_CLOSE, 'g'), (_, i) => explicitSlots[+i]);
         s = s.replace(new RegExp(PH_OPEN + 'CUR(\\d+)' + PH_CLOSE, 'g'), (_, i) => currencySlots[+i]);
-
         return s;
     } catch (e) {
         console.warn('Math parse fallback:', e);
@@ -416,7 +381,7 @@ function setupGrid() {
 
 async function loadQuestion() {
     if (STATE.currentIndex >= STATE.dataset.questions.length) {
-        endGame();
+        finishGame();
         return;
     }
 
@@ -493,8 +458,9 @@ function checkAnswer(selectedIndex) {
 
         if (wasGambling) showEncouragement('gamble-win');
 
+        // Early win: threshold hit before all questions done
         if (STATE.correctCount >= getWinTarget()) {
-            setTimeout(() => cascadeRevealAndEnd(), 600);
+            setTimeout(() => cascadeRevealAndEnd(true), 600);
             return;
         }
 
@@ -520,7 +486,7 @@ function checkAnswer(selectedIndex) {
         setTimeout(() => {
             STATE.currentIndex++;
             if (STATE.currentIndex >= STATE.dataset.questions.length) {
-                cascadeRevealAndEnd();
+                finishGame();
             } else {
                 loadQuestion();
             }
@@ -661,54 +627,96 @@ function showEncouragement(type) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 9 — CASCADE REVEAL & END GAME
+   SECTION 9 — END GAME (v4.2: fail state)
    ═══════════════════════════════════════════════════════ */
 
-function cascadeRevealAndEnd() {
+// Called when all questions are done OR threshold is hit early
+function finishGame() {
+    const won = STATE.correctCount >= getWinTarget();
+    if (won) {
+        cascadeRevealAndEnd(true);
+    } else {
+        cascadeRevealAndEnd(false);
+    }
+}
+
+function cascadeRevealAndEnd(didWin) {
     const remaining = [];
     document.querySelectorAll('.grid-tile').forEach(tile => {
         if (!tile.classList.contains('revealed')) remaining.push(tile);
     });
 
-    if (remaining.length === 0) { endGame(); return; }
-
-    remaining.forEach((tile, i) => {
-        setTimeout(() => tile.classList.add('cascade-reveal'), i * 80);
-    });
-
-    setTimeout(() => endGame(), remaining.length * 80 + 600);
+    if (didWin) {
+        // WIN: cascade reveal all remaining tiles
+        if (remaining.length === 0) {
+            endGame(true);
+            return;
+        }
+        remaining.forEach((tile, i) => {
+            setTimeout(() => tile.classList.add('cascade-reveal'), i * 80);
+        });
+        setTimeout(() => endGame(true), remaining.length * 80 + 600);
+    } else {
+        // LOSE: tiles stay covered, show end screen immediately
+        endGame(false);
+    }
 }
 
-function endGame() {
-    document.querySelectorAll('.grid-tile').forEach(tile => {
-        tile.classList.add('revealed');
-        tile.classList.remove('cascade-reveal');
-    });
-
+function endGame(didWin) {
     const target = getWinTarget();
     const total = STATE.dataset.questions.length;
     const score = STATE.correctCount;
+    const tileTotal = document.querySelectorAll('.grid-tile').length;
+    const revealed = STATE.revealedHistory.length;
 
     let message = '';
-    if (score >= total) {
-        message = 'Perfect score! Every tile unlocked! 🏆';
-    } else if (score >= target) {
-        message = `You got ${score}/${total} right — image unlocked! 🎉`;
+    let emoji = '';
+
+    if (didWin && score >= total) {
+        emoji = '🏆';
+        message = `Perfect score! ${score}/${total} — every tile unlocked!`;
+        // Ensure all tiles visible
+        document.querySelectorAll('.grid-tile').forEach(t => {
+            t.classList.add('revealed');
+            t.classList.remove('cascade-reveal');
+        });
+    } else if (didWin) {
+        emoji = '🎉';
+        message = `You got ${score}/${total} right — image unlocked!`;
+        document.querySelectorAll('.grid-tile').forEach(t => {
+            t.classList.add('revealed');
+            t.classList.remove('cascade-reveal');
+        });
     } else {
-        message = `You got ${score}/${total} right. The full image is revealed anyway! 💪`;
+        emoji = '🔒';
+        message = `You got ${score}/${total} right, but needed ${target}. The image stays hidden!`;
+        // Tiles stay covered — do NOT reveal
     }
 
     const panel = document.querySelector('.question-panel');
     panel.innerHTML = `
         <div class="end-game-panel">
-            <h2>🎉 Worksheet Complete!</h2>
+            <h2>${emoji} ${didWin ? 'Image Unlocked!' : 'Not Quite!'}</h2>
             <p>${message}</p>
-            <button id="back-to-launcher">← Choose Another Worksheet</button>
+            <p style="font-size:0.82rem; color:var(--color-text-muted);">
+                Tiles revealed: ${revealed}/${tileTotal}
+            </p>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center;">
+                ${!didWin ? '<button id="retry-btn" class="end-btn retry">🔄 Try Again</button>' : ''}
+                <button id="back-to-launcher" class="end-btn">← Choose Another</button>
+            </div>
         </div>`;
+
     document.getElementById('back-to-launcher').addEventListener('click', () => {
         showScreen('launcher-screen');
         loadWorksheetIndex();
     });
+
+    if (!didWin) {
+        document.getElementById('retry-btn').addEventListener('click', () => {
+            startWorksheet(STATE.currentFilePath || '');
+        });
+    }
 }
 
 /* ═══════════════════════════════════════════════════════
