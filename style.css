@@ -157,6 +157,7 @@ body {
     overflow: hidden;
     aspect-ratio: 3 / 2;
     background: #000;
+    flex-shrink: 0;
 }
 
 #reveal-image {
