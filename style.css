@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   Mystery Grid Reveal — Styles v7.1
+   Mystery Grid Reveal — Styles v7.2
    ═══════════════════════════════════════════ */
 
 :root {
@@ -43,6 +43,7 @@ mjx-container {
     line-height: 0;
     margin: 0 !important;
     padding: 0 !important;
+    background: transparent !important;
 }
 
 mjx-container svg {
@@ -51,13 +52,8 @@ mjx-container svg {
     overflow: visible;
 }
 
-/* Kill grey highlight rectangles */
-mjx-container svg rect {
-    fill: currentColor !important;
-    opacity: 0 !important;
-}
+/* DO NOT set opacity on rect — MathJax uses rect for fraction lines! */
 
-/* Prevent cursive / italic on text-mode content */
 mjx-utext, mjx-mtext {
     font-family: inherit !important;
     font-style: normal !important;
@@ -398,10 +394,7 @@ mjx-utext, mjx-mtext {
     }
 
     .launcher-container h1 { font-size: 1.4rem; }
-
     .game-header h2 { font-size: 0.85rem; }
-
     #question-text { font-size: 0.95rem; }
-
     .option-btn { font-size: 0.88rem; padding: 0.6rem 0.5rem; }
 }
