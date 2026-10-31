@@ -1,21 +1,17 @@
-/* ============================================================
-   MYSTERY GRID REVEAL — style.css v6.0
-   ============================================================ */
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --bg:          #0f172a;
-    --bg-card:     #1e293b;
-    --bg-input:    #0b1220;
-    --text:        #f1f5f9;
-    --text-dim:    #94a3b8;
-    --primary:     #6366f1;
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --bg-input: #0b1220;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --primary: #6366f1;
     --primary-hov: #4f46e5;
-    --correct:     #22c55e;
-    --wrong:       #ef4444;
-    --gold:        #f59e0b;
-    --tile:        #334155;
+    --correct: #22c55e;
+    --wrong: #ef4444;
+    --gold: #f59e0b;
+    --tile: #334155;
     --r-sm: 8px;
     --r-lg: 16px;
     --fast: 0.15s ease;
@@ -34,11 +30,9 @@ body {
 
 .hidden { display: none !important; }
 
-/* ── Screens ── */
 .screen { display: none; min-height: 100dvh; }
 .screen.active { display: block; }
 
-/* ═══════════ LAUNCHER ═══════════ */
 .launcher-container {
     max-width: 620px;
     margin: 0 auto;
@@ -74,10 +68,10 @@ body {
 }
 .ws-card:active { transform: translateY(0); }
 
-.ws-icon  { font-size: 1.6rem; flex-shrink: 0; }
-.ws-body  { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.ws-icon { font-size: 1.6rem; flex-shrink: 0; }
+.ws-body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .ws-title { font-size: 1rem; font-weight: 600; }
-.ws-meta  { font-size: 0.8rem; color: var(--text-dim); }
+.ws-meta { font-size: 0.8rem; color: var(--text-dim); }
 .ws-count {
     flex-shrink: 0;
     font-size: 0.7rem;
@@ -87,7 +81,6 @@ body {
     border-radius: 99px;
 }
 
-/* Launcher error box */
 #launcher-error {
     background: var(--bg-card);
     border: 1px solid var(--wrong);
@@ -106,9 +99,7 @@ body {
     border-radius: 4px;
     font-size: 0.75rem;
 }
-#launcher-error .hint { color: var(--text-dim); margin: 0.75rem 0; }
 
-/* ═══════════ GAME ═══════════ */
 .game-container {
     max-width: 560px;
     margin: 0 auto;
@@ -141,7 +132,6 @@ body {
 }
 #back-btn:hover { background: var(--primary); }
 
-/* ── Image + grid ── */
 #image-reveal-container {
     position: relative;
     width: 100%;
@@ -153,12 +143,7 @@ body {
 }
 #reveal-image { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-#grid-overlay {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    gap: 2px;
-}
+#grid-overlay { position: absolute; inset: 0; display: grid; gap: 2px; }
 
 .grid-tile {
     background: var(--tile);
@@ -173,23 +158,22 @@ body {
     20% { opacity: 0.25; transform: translateX(-2px); }
     40% { opacity: 0.85; transform: translateX(2px); }
     60% { opacity: 0.15; transform: translateX(-1px); }
-    80% { opacity: 0.7;  transform: translateX(1px); }
+    80% { opacity: 0.7; transform: translateX(1px); }
 }
 
 .grid-tile.cascade-reveal { animation: cascade 0.5s ease forwards; }
 @keyframes cascade {
-    0%   { opacity: 1; transform: scale(1) rotateY(0); }
-    50%  { opacity: 0.5; transform: scale(1.1) rotateY(90deg); background: var(--gold); }
+    0% { opacity: 1; transform: scale(1) rotateY(0); }
+    50% { opacity: 0.5; transform: scale(1.1) rotateY(90deg); background: var(--gold); }
     100% { opacity: 0; transform: scale(0.85) rotateY(180deg); }
 }
 
 .grid-tile.gamble-glow { animation: pulse-gold 1.1s ease-in-out infinite; }
 @keyframes pulse-gold {
     0%, 100% { box-shadow: inset 0 0 6px var(--gold); }
-    50%      { box-shadow: inset 0 0 18px var(--gold); }
+    50% { box-shadow: inset 0 0 18px var(--gold); }
 }
 
-/* ── Question panel ── */
 .question-panel {
     background: var(--bg-card);
     border-radius: var(--r-sm);
@@ -203,11 +187,6 @@ body {
     min-height: 2.6rem;
 }
 .inline-error { color: var(--wrong); font-weight: 600; }
-#question-text code {
-    font-size: 0.72rem;
-    word-break: break-all;
-    color: var(--text-dim);
-}
 
 #options-container {
     display: grid;
@@ -250,7 +229,6 @@ body {
     text-align: center;
 }
 
-/* ── Gamble ── */
 .gamble-prompt {
     background: rgba(245, 158, 11, 0.12);
     border: 1px solid var(--gold);
@@ -275,7 +253,7 @@ body {
     min-height: 38px;
 }
 .gamble-yes { background: var(--gold); color: #3b2200; }
-.gamble-no  { background: var(--bg-input); color: var(--text-dim); }
+.gamble-no { background: var(--bg-input); color: var(--text-dim); }
 
 .gamble-active {
     background: rgba(245, 158, 11, 0.12);
@@ -288,7 +266,6 @@ body {
     text-align: center;
 }
 
-/* ═══════════ END OVERLAY ═══════════ */
 #end-overlay {
     position: fixed;
     inset: 0;
@@ -309,7 +286,7 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
 }
 .end-card h2 { font-size: 1.45rem; margin-bottom: 0.6rem; }
-.end-card p  { color: var(--text-dim); margin-bottom: 1.6rem; }
+.end-card p { color: var(--text-dim); margin-bottom: 1.6rem; }
 
 .end-buttons { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
 
@@ -330,7 +307,6 @@ body {
 .end-btn.retry { background: var(--gold); color: #3b2200; }
 .end-btn.retry:hover { background: #d97706; }
 
-/* ═══════════ TOAST ═══════════ */
 .toast {
     position: fixed;
     left: 50%;
@@ -350,7 +326,6 @@ body {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ═══════════ MATHJAX ═══════════ */
 mjx-container,
 mjx-container[jax="SVG"],
 mjx-container[jax="SVG"][display="true"] {
@@ -385,7 +360,6 @@ mjx-assistive-mml {
     overflow: hidden !important;
 }
 
-/* ═══════════ RESPONSIVE ═══════════ */
 @media (max-width: 420px) {
     #options-container { grid-template-columns: 1fr; }
     .launcher-container { padding: 1.25rem 0.75rem 2rem; }
