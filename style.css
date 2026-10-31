@@ -674,3 +674,18 @@ mjx-container mjx-utext,
 mjx-container mjx-mtext {
     font-family: inherit !important;
 }
+
+/* ═══════════════════════════════════════════════════════
+   CASCADE REVEAL ANIMATION
+   Triggered when WIN_THRESHOLD is reached.
+   Remaining tiles flip away one by one.
+   ═══════════════════════════════════════════════════════ */
+.grid-tile.cascade-reveal {
+    animation: cascade-flip 0.5s ease forwards;
+}
+
+@keyframes cascade-flip {
+    0%   { opacity: 1; transform: scale(1) rotateY(0deg); }
+    50%  { opacity: 0.5; transform: scale(1.1) rotateY(90deg); background: var(--color-gamble-gold); }
+    100% { opacity: 0; transform: scale(0.8) rotateY(180deg); }
+}
