@@ -1,11 +1,10 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — script.js v6.1
-   Exhaustive answer-format support + rich diagnostics
+   MYSTERY GRID REVEAL — script.js v6.2
+   Fix: added qText to field list (matches your JSON structure)
    ============================================================ */
 
 'use strict';
 
-// ═══════════════ STATE ═══════════════
 const STATE = {
     baseUrl: null,
     index: [],
@@ -21,7 +20,6 @@ const STATE = {
     timers: []
 };
 
-// ═══════════════ HELPERS ═══════════════
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
@@ -126,34 +124,20 @@ function normaliseIndex(raw) {
     })).filter(ws => ws.file);
 }
 
-/**
- * Normalises a question using every known field name and answer format.
- * Supports:
- *   - question / text / q / prompt / stem
- *   - options / choices / answers / opts / alternatives / A/B/C/D keys
- *   - answer / correct / correctAnswer / correctIndex / ans / solution / key
- *   - answer as full string, 0-based index, 1-based index, letter A-D,
- *     object { text }, or fuzzy-matched string
- */
 function normaliseQuestion(raw, i) {
-    // ── Diagnostic dump for Q1 ──
     if (i === 0) {
         log('── First question raw structure ──');
         log('Keys:', Object.keys(raw));
-        try { log('JSON:', JSON.stringify(raw).slice(0, 800)); } catch (e) {}
     }
 
-    // ── Extract question text ──
+    // ★ qText added first — matches your JSON structure
     const text = String(
-            const text = String(
         raw.qText ?? raw.question ?? raw.text ?? raw.q ?? raw.prompt ?? raw.stem ?? ''
     ).trim();
 
-    // ── Extract options ──
     let options = raw.options ?? raw.choices ?? raw.answers ??
                   raw.opts ?? raw.alternatives ?? null;
 
-    // Options as A/B/C/D keyed object
     if (!options && (raw.A || raw.a)) {
         options = [
             raw.A ?? raw.a, raw.B ?? raw.b,
@@ -163,7 +147,6 @@ function normaliseQuestion(raw, i) {
 
     if (!Array.isArray(options)) options = [];
 
-    // Options may be objects like { text: "...", correct: true }
     let correctFromObject = null;
     options = options.map((o, idx) => {
         if (o && typeof o === 'object') {
@@ -173,41 +156,35 @@ function normaliseQuestion(raw, i) {
         return String(o ?? '').trim();
     }).filter(o => o !== '');
 
-    // ── Extract answer (try every known key) ──
-    let answer = raw.answer ?? raw.correct ?? raw.correctAnswer ??
-                 raw.correct_answer ?? raw.correctOption ??
-                 raw.correctIndex ?? raw.correct_index ??
+    // ★ correctIndex is already here — works as numeric index
+    let answer = raw.correctIndex ?? raw.answer ?? raw.correct ??
+                 raw.correctAnswer ?? raw.correct_answer ??
+                 raw.correctOption ?? raw.correct_index ??
                  raw.ans ?? raw.solution ?? raw.key ?? null;
 
-    // Answer embedded inside an option object { correct: true }
     if (answer == null && correctFromObject != null) {
         answer = options[correctFromObject];
     }
 
-    // Numeric index (0-based)
     if (typeof answer === 'number') {
         if (options[answer] !== undefined) {
             answer = options[answer];
         } else if (options[answer - 1] !== undefined) {
-            // 1-based fallback
             answer = options[answer - 1];
         }
     }
 
-    // Object answer { text: "..." }
     if (answer && typeof answer === 'object') {
         answer = answer.text ?? answer.value ?? answer.label ?? '';
     }
 
     answer = String(answer ?? '').trim();
 
-    // Letter A/B/C/D
     if (/^[A-D]$/i.test(answer) && options.length >= 2 && !options.includes(answer)) {
         const idx = answer.toUpperCase().charCodeAt(0) - 65;
         if (options[idx] !== undefined) answer = options[idx];
     }
 
-    // Numeric string "0", "1", "2", "3" as index
     if (/^\d+$/.test(answer) && !options.includes(answer)) {
         const idx = parseInt(answer, 10);
         if (options[idx] !== undefined) {
@@ -217,7 +194,6 @@ function normaliseQuestion(raw, i) {
         }
     }
 
-    // Fuzzy match: case-insensitive, trimmed, whitespace-collapsed
     if (!options.includes(answer) && answer !== '') {
         const norm = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim();
         const target = norm(answer);
@@ -230,7 +206,7 @@ function normaliseQuestion(raw, i) {
     if (!valid) {
         warn(
             `Q${i + 1} REJECTED:\n` +
-            `  text:    "${text.slice(0, 80)}${text.length > 80 ? '…' : ''}"\n` +
+            `  text:    "${text.slice(0, 80)}"\n` +
             `  options: ${JSON.stringify(options).slice(0, 200)}\n` +
             `  answer:  "${answer}"\n` +
             `  rawKeys: [${Object.keys(raw).join(', ')}]`
@@ -241,7 +217,7 @@ function normaliseQuestion(raw, i) {
 }
 
 function normaliseWorksheet(raw) {
-    log('── Worksheet top-level keys ──', Object.keys(raw));
+    log('Worksheet keys:', Object.keys(raw));
     const qsRaw = raw.questions || raw.items || raw.quiz || [];
     log(`Raw question count: ${qsRaw.length}`);
 
@@ -267,10 +243,7 @@ async function init() {
 
     const { data, attempted } = await resolveBase();
 
-    if (!data) {
-        showLauncherError(attempted);
-        return;
-    }
+    if (!data) { showLauncherError(attempted); return; }
 
     STATE.index = normaliseIndex(data);
     log(`Index loaded: ${STATE.index.length} worksheet(s)`);
@@ -364,7 +337,7 @@ async function startWorksheet(filePath, title) {
     if (STATE.total === 0) {
         $('#question-text').innerHTML =
             '<span class="inline-error">⚠️ No valid questions in this worksheet.</span><br>' +
-            '<small>Open the console (F12) to see which fields were missing.</small>';
+            '<small>Open the console (F12) to see details.</small>';
         return;
     }
 
@@ -536,7 +509,6 @@ function shuffle(arr) {
 
 function showQuestion(index) {
     clearTimers();
-
     if (index >= STATE.total) { finishGame(); return; }
 
     STATE.qIndex   = index;
@@ -613,7 +585,7 @@ function checkAnswer(selected, correct) {
     const isRight = selected === correct;
     $$('#options-container .opt-btn').forEach(btn => {
         btn.disabled = true;
-        if (btn.dataset.value === correct)  btn.classList.add('correct');
+        if (btn.dataset.value === correct) btn.classList.add('correct');
         if (btn.dataset.value === selected && !isRight) btn.classList.add('wrong');
     });
 
