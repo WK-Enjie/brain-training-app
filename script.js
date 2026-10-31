@@ -1,6 +1,6 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — script.js v4.4
-   Fixes: overlay end-screen (Try Again works), consistent x/y/z
+   MYSTERY GRID REVEAL — script.js v4.6
+   Fix: showScreen uses inline display (no CSS class dependency)
    ============================================================ */
 
 // ===== STATE =====
@@ -20,10 +20,18 @@ const STATE = {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
+/* ★ v4.6: uses inline style so it works even if .hidden CSS is missing */
 function showScreen(id) {
     ['launcher-screen', 'game-screen', 'end-screen'].forEach(s => {
         const el = document.getElementById(s);
-        if (el) el.classList.toggle('hidden', s !== id);
+        if (!el) return;
+        if (s === id) {
+            el.style.display = '';
+            el.removeAttribute('aria-hidden');
+        } else {
+            el.style.display = 'none';
+            el.setAttribute('aria-hidden', 'true');
+        }
     });
 }
 
@@ -43,6 +51,7 @@ async function init() {
                 '<p class="error">Failed to load worksheets. Check config.js and your GitHub repo.</p>';
         }
     }
+    showScreen('launcher-screen');
 }
 
 function buildLauncher(index) {
@@ -65,7 +74,6 @@ function buildLauncher(index) {
 
 // ===== START WORKSHEET =====
 async function startWorksheet(filePath) {
-    // --- full state reset (makes Try Again safe) ---
     STATE.currentFilePath = filePath;
     STATE.currentQuestion = 0;
     STATE.correctCount = 0;
@@ -73,13 +81,11 @@ async function startWorksheet(filePath) {
     STATE.isAnswered = false;
     STATE.gambleActive = false;
 
-    // hide overlay if it exists from a previous round
     const overlay = document.getElementById('end-overlay');
     if (overlay) overlay.style.display = 'none';
 
     showScreen('game-screen');
 
-    // fetch only if we don't already have this worksheet cached
     if (!STATE.worksheetData || STATE._lastFilePath !== filePath) {
         try {
             const url = `${CONFIG.BASE_URL}/${filePath}`;
@@ -248,11 +254,10 @@ function wrapMathRuns(text) {
     return result;
 }
 
-/* Wrap lone x, y, z in prose so every variable uses the same MathJax glyph */
 function wrapStandaloneVars(text) {
     const parts = text.split(/(\\\([\s\S]*?\\\))/g);
     for (let i = 0; i < parts.length; i++) {
-        if (parts[i].startsWith('\\(')) continue;   // already math
+        if (parts[i].startsWith('\\(')) continue;
         parts[i] = parts[i].replace(/\b([xyz])\b/g, '\\($1\\)');
     }
     return parts.join('');
@@ -285,17 +290,14 @@ function showQuestion(index) {
     const qArea = $('#question-area');
     if (!qArea) return;
 
-    // question number
     const qNum = document.createElement('div');
     qNum.className = 'q-number';
     qNum.textContent = `Q${index + 1} of ${STATE.totalTiles}`;
 
-    // question text  (math runs → standalone vars)
     const qText = document.createElement('div');
     qText.className = 'q-text';
     qText.innerHTML = wrapStandaloneVars(wrapMathRuns(q.question));
 
-    // options (always shuffled)
     const optionsDiv = document.createElement('div');
     optionsDiv.className = 'options';
 
@@ -393,7 +395,7 @@ function cascadeRevealAndEnd(didWin) {
     setTimeout(() => endGame(true), unrevealed.length * 80 + 600);
 }
 
-// ===== END GAME  (floating overlay — game DOM stays intact) =====
+// ===== END GAME (floating overlay) =====
 function endGame(didWin) {
     const total     = STATE.totalTiles;
     const correct   = STATE.correctCount;
@@ -412,7 +414,6 @@ function endGame(didWin) {
         message = `You got ${correct}/${total} right, but needed ${target}. The image stays hidden!`;
     }
 
-    // create overlay once, reuse on retry
     let overlay = document.getElementById('end-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
