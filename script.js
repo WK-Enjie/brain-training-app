@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — script.js  (v3)
+   MYSTERY GRID REVEAL — script.js  (v3.1)
    Math parser · Grid engine · Gamble mechanics
    ═══════════════════════════════════════════════════════ */
 
@@ -175,68 +175,77 @@ function isPureExpression(s) {
     return true;
 }
 
-function parseRun(s) {
-    if (isPureExpression(s)) return '\\(' + toLatex(s) + '\\)';
-    return s;
-}
+// ── Math-in-prose detector (v3.1 — character scanner) ──
+// Scans character-by-character to find contiguous math expressions
+// within prose text. Keeps "(3x - 2)/4" together instead of
+// splitting on spaces like the old token-based approach.
 
 function wrapMathRuns(text) {
-    const tokens = text.split(/(\s+)/);
-    let result = '';
-    let mathBuf = '';
+    const MATH_START = /[+\-×÷=^/(√∛<>≤≥≠≈\d]/;
+    const MATH_CHARS = /[+\-×÷=^/()√∛<>≤≥≠≈\d\w.]/;
+    const MATH_OPS   = /[+\-×÷=^/√∛<>≤≥≠≈]/;
 
-    for (const tok of tokens) {
-        if (/^\s+$/.test(tok)) {
-            if (mathBuf) {
-                if (hasMathOperator(mathBuf)) {
-                    result += '\\(' + toLatex(mathBuf.trim()) + '\\)';
+    let result = '';
+    let i = 0;
+
+    while (i < text.length) {
+        // Detect start of a math expression:
+        // - Must be a math-start character (digit, operator, open paren)
+        // - Must NOT be immediately after a letter (avoids catching "x3" in "box3")
+        if (MATH_START.test(text[i]) && !(i > 0 && /[a-zA-Z]/.test(text[i - 1]))) {
+            let end = i;
+            let hasOp = false;
+
+            // Extend through math characters and internal spaces
+            while (end < text.length) {
+                if (MATH_CHARS.test(text[end])) {
+                    if (MATH_OPS.test(text[end])) hasOp = true;
+                    end++;
+                } else if (text[end] === ' ' && end + 1 < text.length && MATH_CHARS.test(text[end + 1])) {
+                    end++; // include space within math expression
                 } else {
-                    result += mathBuf;
+                    break;
                 }
-                mathBuf = '';
             }
-            result += tok;
-        } else if (/[+\-×÷=^/()√∛<>≤≥≠≈\d]/.test(tok) && !/^[a-zA-Z]+$/.test(tok)) {
-            mathBuf += (mathBuf ? ' ' : '') + tok;
+
+            const segment = text.slice(i, end).trim();
+            if (hasOp && segment.length > 1) {
+                result += '\\(' + toLatex(segment) + '\\)';
+            } else {
+                result += text.slice(i, end);
+            }
+            i = end;
         } else {
-            if (mathBuf) {
-                if (hasMathOperator(mathBuf)) {
-                    result += '\\(' + toLatex(mathBuf.trim()) + '\\)';
-                } else {
-                    result += mathBuf;
-                }
-                mathBuf = '';
-            }
-            result += tok;
+            result += text[i];
+            i++;
         }
     }
-    if (mathBuf) {
-        if (hasMathOperator(mathBuf)) {
-            result += '\\(' + toLatex(mathBuf.trim()) + '\\)';
-        } else {
-            result += mathBuf;
-        }
-    }
+
     return result;
 }
+
+// ── PUBLIC ENTRY POINT ──
 
 function parseMathToLatex(raw) {
     if (!raw || typeof raw !== 'string') return raw;
     try {
         let s = raw;
 
+        // 1. Protect currency: $21.80  $5  $1.40
         const currencySlots = [];
         s = s.replace(/\$(\s?\d[\d,.]*)/g, (_, g) => {
             currencySlots.push('$' + g);
             return PH_OPEN + 'CUR' + (currencySlots.length - 1) + PH_CLOSE;
         });
 
+        // 2. Protect explicit $...$ math (if any)
         const explicitSlots = [];
         s = s.replace(/\$([^$]+)\$/g, (_, g) => {
             explicitSlots.push('\\(' + toLatex(g) + '\\)');
             return PH_OPEN + 'EXP' + (explicitSlots.length - 1) + PH_CLOSE;
         });
 
+        // 3. Protect compound units — keep as plain text
         const unitSlots = [];
         for (const [unit] of UNIT_LIST) {
             const esc = unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -246,12 +255,14 @@ function parseMathToLatex(raw) {
             });
         }
 
+        // 4. Convert math
         if (isPureExpression(s)) {
             s = '\\(' + toLatex(s) + '\\)';
         } else {
             s = wrapMathRuns(s);
         }
 
+        // 5. Restore placeholders
         s = s.replace(new RegExp(PH_OPEN + 'UNT(\\d+)' + PH_CLOSE, 'g'),
             (_, i) => unitSlots[+i]);
         s = s.replace(new RegExp(PH_OPEN + 'EXP(\\d+)' + PH_CLOSE, 'g'),
@@ -419,7 +430,6 @@ async function loadQuestion() {
 
     qTextEl.innerHTML = `<strong>Q${STATE.currentIndex + 1}.</strong> ${parseMathToLatex(q.qText)}`;
 
-    // Always shuffle options
     const pairs = q.options.map((text, idx) => ({
         text,
         isCorrect: idx === q.correctIndex
@@ -447,21 +457,19 @@ async function loadQuestion() {
     await typesetMath(qTextEl);
     await typesetMath(optContainer);
 
-    // Offer gamble BEFORE answering (if tiles available to risk)
     if (STATE.revealedHistory.length > 0 && STATE.shuffledTiles.length > 0) {
         offerGamble();
     }
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 7 — ANSWER CHECKING (v3: auto-advance on wrong)
+   SECTION 7 — ANSWER CHECKING
    ═══════════════════════════════════════════════════════ */
 
 function checkAnswer(selectedIndex) {
     if (STATE.isAnswering) return;
     STATE.isAnswering = true;
 
-    // Remove gamble prompt if visible
     const prompt = document.getElementById('gamble-prompt');
     if (prompt) prompt.remove();
 
@@ -486,11 +494,9 @@ function checkAnswer(selectedIndex) {
             loadQuestion();
         }, 700);
     } else {
-        // Show wrong + correct highlights
         buttons[selectedIndex].classList.add('wrong');
         buttons[STATE.liveCorrectIndex].classList.add('correct');
 
-        // If gambled and lost, take away a tile
         if (STATE.gambleMode) {
             resolveGambleLoss();
             showEncouragement('gamble-loss');
@@ -502,7 +508,6 @@ function checkAnswer(selectedIndex) {
         STATE.gambleMode = false;
         document.querySelector('.game-container')?.classList.remove('gamble-active');
 
-        // Auto-advance after 1.5s — no retry needed
         setTimeout(() => {
             STATE.currentIndex++;
             loadQuestion();
@@ -511,7 +516,7 @@ function checkAnswer(selectedIndex) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 8 — GAMBLE MECHANICS (v3: pre-question bet)
+   SECTION 8 — GAMBLE MECHANICS
    ═══════════════════════════════════════════════════════ */
 
 function revealTile(count) {
