@@ -14,19 +14,12 @@
                 displayMath: [['\\[', '\\]']],
                 processEscapes: true
             },
-            svg: {
-                fontCache: 'global',
-                scale: 0.88
-            },
+            svg: { fontCache: 'global', scale: 0.88 },
             options: {
                 enableMenu: false,
-                renderActions: {
-                    addMenu: [0, '', '']
-                }
+                renderActions: { addMenu: [0, '', ''] }
             },
-            startup: {
-                typeset: false
-            }
+            startup: { typeset: false }
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
@@ -38,9 +31,13 @@
         <div class="launcher-container">
             <h1>🔍 Mystery Grid Reveal</h1>
             <p class="tagline">Solve questions. Reveal the hidden image.</p>
+
             <div id="worksheet-list" aria-label="Available worksheets">
                 <p class="loading-msg">Loading worksheets…</p>
             </div>
+
+            <div id="launcher-error" class="hidden"></div>
+
             <p class="footer-note">Tap a worksheet to begin.</p>
         </div>
     </section>
@@ -60,6 +57,7 @@
             </div>
 
             <div class="question-panel">
+                <div id="gamble-slot"></div>
                 <p id="question-text" aria-live="polite"></p>
                 <div id="options-container" role="group" aria-label="Answer options"></div>
                 <p id="progress-tracker"></p>
@@ -67,6 +65,21 @@
 
         </div>
     </section>
+
+    <!-- ═══════════════ END OVERLAY (static) ═══════════════ -->
+    <div id="end-overlay" class="hidden">
+        <div class="end-card">
+            <h2 id="end-title"></h2>
+            <p id="end-message"></p>
+            <div class="end-buttons">
+                <button class="end-btn retry hidden" id="retry-btn">Try Again</button>
+                <button class="end-btn" id="end-back-btn">Choose Another</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast" class="toast"></div>
 
     <!-- Scripts: config FIRST, then engine -->
     <script src="config.js"></script>
