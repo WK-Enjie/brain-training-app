@@ -1,49 +1,31 @@
 /* ═══════════════════════════════════════════════════════
    Mystery Grid Reveal — Game Engine v7.3
-   Fixed vault placeholder · Balanced-bracket fractions
+   Fixed vault placeholders · Fixed word-problem wrapping
    ═══════════════════════════════════════════════════════ */
 
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-/* ── Global State ── */
 const STATE = {
-    worksheet: null,
-    questions: [],
-    currentIndex: 0,
-    score: 0,
-    total: 0,
-    tiles: [],
-    gridCols: 6,
-    gridRows: 4,
-    timers: [],
-    gambleActive: false,
-    locked: false,
-    baseResolved: null,
-    currentFilePath: ''
+    worksheet: null, questions: [], currentIndex: 0,
+    score: 0, total: 0, tiles: [],
+    gridCols: 6, gridRows: 4,
+    timers: [], gambleActive: false, locked: false,
+    baseResolved: null, currentFilePath: ''
 };
 
 /* ══════════════════════════════════════════════
-   MATH PROCESSING PIPELINE
+   MATH PIPELINE
    ══════════════════════════════════════════════ */
 
-/**
- * Balanced-bracket fraction converter.
- * Walks character-by-character, finds each '/',
- * extracts numerator (look-back) and denominator (look-forward)
- * using proper parenthesis depth counting.
- */
+/* ── Balanced-bracket fraction converter ── */
 function convertFractions(t) {
     if (!t || !t.includes('/')) return t;
-
-    let result = '';
-    let i = 0;
+    let result = '', i = 0;
 
     while (i < t.length) {
         if (t[i] === '/' && i > 0 && i < t.length - 1) {
-            /* ── Extract numerator from result (look back) ── */
-            let num = '';
-            let numStart = result.length;
+            let num = '', numStart = result.length;
 
             if (result.endsWith(')')) {
                 let depth = 1, j = result.length - 2;
@@ -61,10 +43,7 @@ function convertFractions(t) {
                 num = result.substring(numStart);
             }
 
-            /* ── Extract denominator from remaining text (look forward) ── */
-            let den = '';
-            let denEnd = i + 1;
-
+            let den = '', denEnd = i + 1;
             if (t[i + 1] === '(') {
                 let depth = 1, j = i + 2;
                 while (j < t.length && depth > 0) {
@@ -74,7 +53,6 @@ function convertFractions(t) {
                 }
                 denEnd = j;
                 den = t.substring(i + 1, denEnd);
-                // Grab trailing power: ^2 or ^{2}
                 if (denEnd < t.length && t[denEnd] === '^') {
                     let k = denEnd + 1;
                     if (k < t.length && t[k] === '{') {
@@ -82,8 +60,7 @@ function convertFractions(t) {
                         if (end !== -1) { den += t.substring(denEnd, end + 1); denEnd = end + 1; }
                     } else if (k < t.length && /\d/.test(t[k])) {
                         while (k < t.length && /\d/.test(t[k])) k++;
-                        den += t.substring(denEnd, k);
-                        denEnd = k;
+                        den += t.substring(denEnd, k); denEnd = k;
                     }
                 }
             } else {
@@ -93,9 +70,8 @@ function convertFractions(t) {
                 den = t.substring(i + 1, denEnd);
             }
 
-            /* ── Build \frac if both parts found ── */
             if (num && den) {
-                const stripOuter = s => {
+                const strip = s => {
                     if (!s.startsWith('(') || !s.endsWith(')')) return s;
                     let d = 0;
                     for (let k = 0; k < s.length - 1; k++) {
@@ -105,130 +81,87 @@ function convertFractions(t) {
                     }
                     return s.slice(1, -1);
                 };
-
                 result = result.substring(0, numStart) +
-                         '\\frac{' + stripOuter(num) + '}{' + stripOuter(den) + '}';
+                         '\\frac{' + strip(num) + '}{' + strip(den) + '}';
                 i = denEnd;
                 continue;
             }
         }
-
         result += t[i];
         i++;
     }
-
     return result;
 }
 
-/** Convert ^2 → ^{2} for MathJax superscripts */
 function convertPowers(t) {
-    if (!t) return t;
-    return t.replace(/\^(\d+)/g, '^{$1}');
+    return t ? t.replace(/\^(\d+)/g, '^{$1}') : t;
 }
 
-/** Full notation conversion: fractions then powers */
 function convertNotation(t) {
     if (!t) return t;
-    t = convertFractions(t);
-    t = convertPowers(t);
-    return t;
+    return convertPowers(convertFractions(t));
 }
 
-/**
- * Format a single answer option.
- * Options are short and almost always pure math.
- */
+/* ── Format a single answer option ── */
 function formatOption(raw) {
     if (!raw || typeof raw !== 'string') return '';
     let t = raw.trim();
 
-    // Extract trailing unit
     const unitRe = /\s+(cm\^?2?|cm²|m\^?2?|m²|km\/?h?|km|kg|g|years?|marks?|minutes?|items?)$/i;
     const um = t.match(unitRe);
     let unit = '';
     if (um) {
-        unit = um[0];
-        t = t.slice(0, -unit.length);
-        unit = unit.replace(/\^2/g, '²').replace(/\^3/g, '³');
+        unit = um[0].replace(/\^2/g, '²').replace(/\^3/g, '³');
+        t = t.slice(0, -um[0].length);
     }
 
     t = convertNotation(t);
-
-    if (t.trim() && /[a-z+\-*/=^\\]/i.test(t)) {
-        t = '\\(' + t.trim() + '\\)';
-    }
-
+    if (t.trim() && /[a-z+\-*/=^\\]/i.test(t)) t = '\\(' + t.trim() + '\\)';
     return t + unit;
 }
 
-/**
- * Format a full question text (mixed English + math).
- * Pipeline: Stash → Convert → Wrap → Restore
- *
- * Uses § as vault marker (safe Unicode, survives all string ops).
- */
+/* ── Format full question text (mixed English + math) ── */
 function formatQuestionText(raw) {
     if (!raw || typeof raw !== 'string') return '';
     let t = raw;
     const vault = [];
+    /* § is safe: survives innerHTML, won't appear in math/English text */
     const save = m => { vault.push(m); return '§V' + (vault.length - 1) + '§'; };
 
     /* ── Phase 1: Stash non-math tokens ── */
-
-    // Currency: $21.80, $1.40, $50
     t = t.replace(/\$\d+(?:\.\d+)?/g, save);
-
-    // Number + unit combos: 58 cm, 60 km/h, 100 cm^2, 40 minutes, 12 years, 4 marks
     t = t.replace(
         /\d+\s*(?:km\/h|cm\^2|cm²|m\^2|m²|cm|mm|m|km|kg|g|minutes?|mins?|hours?|hrs?|seconds?|secs?|years?|yrs?|marks?|questions?|items?|pens?|notebooks?)/gi,
         save
     );
-
-    // Hyphenated: 30-question
     t = t.replace(/\d+-(?:question|mark|item|year|minute|hour)/gi, save);
-
-    // Unit after closing paren: ") cm" in "(3x + 1) cm"
     t = t.replace(/(\))\s+(cm|mm|m|km|kg|g)\b/gi, (_, p, u) => p + save(' ' + u));
 
     /* ── Phase 2: Convert notation ── */
     t = convertNotation(t);
 
     /* ── Phase 3: Wrap math zones ── */
-
-    // Pattern A — instruction colon: "Simplify: 7a - 3[2b - ...]"
     const colonIdx = t.lastIndexOf(':');
     if (colonIdx > 5 && colonIdx < t.length - 3) {
+        /* Instruction type: "Simplify: 7a - 3[2b - ...]" */
         const prefix   = t.substring(0, colonIdx + 1);
         let   mathPart = t.substring(colonIdx + 1).trim();
         if (mathPart && /[a-z\\]/i.test(mathPart)) {
             t = prefix + ' \\(' + mathPart + '\\)';
         }
     } else {
-        // Pattern B — word problem: inline parenthesised expressions with variables
-        t = t.replace(/(\([^)]*[a-z][^)]*\))/gi, m => {
-            if (m.includes('\\(')) return m;
-            return '\\(' + m + '\\)';
-        });
-        // Pattern B2 — digit+variable sequences: "3x + 1"
-        t = t.replace(/((?:\d+[a-z]|[a-z]\d)(?:\s*[+\-*/=]\s*(?:\d+[a-z]?|\d+))*)/gi, m => {
-            if (m.includes('\\(')) return m;
+        /* Word problem: wrap parenthesised expressions containing variables */
+        t = t.replace(/\(([^)]*[a-z][^)]*)\)/gi, (m, inner) => {
             return '\\(' + m + '\\)';
         });
     }
 
-    /* ── Phase 4: Wrap standalone variables ── */
-    t = t.replace(/(?<![a-zA-Z\\])([xyzabpkm])(?![a-zA-Z{}])/gi, (m, v, offset, str) => {
-        // Skip if already inside \( ... \)
-        const before = str.substring(Math.max(0, offset - 200), offset);
+    /* ── Phase 4: Standalone variables outside \(...\) ── */
+    t = t.replace(/(?<![a-zA-Z\\])([xyz])(?![a-zA-Z{}])/gi, (m, v, offset, str) => {
+        const before = str.substring(0, offset);
         const opens  = (before.match(/\\\(/g) || []).length;
         const closes = (before.match(/\\\)/g) || []).length;
         if (opens > closes) return m;
-
-        // Don't wrap the article "a" in common English contexts
-        if (v.toLowerCase() === 'a') {
-            const ctx = str.substring(Math.max(0, offset - 6), offset).trim().toLowerCase();
-            if (/^(as|is|in|at|to|of|by|or|an|and|was|has|had|per|that|than)$/.test(ctx)) return m;
-        }
         return '\\(' + v + '\\)';
     });
 
@@ -238,7 +171,6 @@ function formatQuestionText(raw) {
     return t;
 }
 
-/** Ask MathJax to re-typeset an element */
 async function typesetMath(el) {
     if (!el) return;
     try {
@@ -248,125 +180,74 @@ async function typesetMath(el) {
             if (MathJax.typesetPromise) await MathJax.typesetPromise([el]);
         }
     } catch (e) {
-        if (CONFIG.DEBUG) console.warn('MathJax typeset error:', e);
+        if (CONFIG.DEBUG) console.warn('MathJax:', e);
     }
 }
 
 /* ══════════════════════════════════════════════
-   SCHEMA-DRIVEN DATA LOADING
+   SCHEMA-DRIVEN LOADER
    ══════════════════════════════════════════════ */
 
-function pick(obj, keys, fallback) {
-    if (fallback === undefined) fallback = '';
-    if (!obj || typeof obj !== 'object') return fallback;
-    for (const k of keys) {
+function pick(obj, keys, fb) {
+    if (fb === undefined) fb = '';
+    if (!obj || typeof obj !== 'object') return fb;
+    for (const k of keys)
         if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
-    }
-    return fallback;
+    return fb;
 }
 
-function mergeSchema(userSchema) {
-    const base = JSON.parse(JSON.stringify(CONFIG.DEFAULT_SCHEMA));
-    if (!userSchema) return base;
-    for (const level of ['worksheet', 'question']) {
-        if (userSchema[level]) {
-            for (const field of Object.keys(userSchema[level])) {
-                if (base[level][field]) {
-                    base[level][field] = [...userSchema[level][field], ...base[level][field]];
-                }
-            }
-        }
-    }
-    return base;
+function mergeSchema(us) {
+    const b = JSON.parse(JSON.stringify(CONFIG.DEFAULT_SCHEMA));
+    if (!us) return b;
+    for (const lv of ['worksheet', 'question'])
+        if (us[lv]) for (const f of Object.keys(us[lv]))
+            if (b[lv][f]) b[lv][f] = [...us[lv][f], ...b[lv][f]];
+    return b;
 }
 
-function normaliseQuestion(raw, index, schema) {
+function normaliseQuestion(raw, idx, schema) {
     if (!raw || typeof raw !== 'object') return null;
-
     const text = pick(raw, schema.question.text, '').toString().trim();
-    if (!text) {
-        if (CONFIG.DEBUG) console.warn('Q' + index + ': no text. Keys:', Object.keys(raw));
-        return null;
-    }
+    if (!text) { if (CONFIG.DEBUG) console.warn('Q'+idx+': no text'); return null; }
 
-    let rawOpts = pick(raw, schema.question.options, null);
-    let options = [];
-
-    if (Array.isArray(rawOpts)) {
-        options = rawOpts.map(o => String(o).trim());
-    } else if (rawOpts && typeof rawOpts === 'object') {
+    let rawOpts = pick(raw, schema.question.options, null), options = [];
+    if (Array.isArray(rawOpts)) options = rawOpts.map(o => String(o).trim());
+    else if (rawOpts && typeof rawOpts === 'object')
         options = Object.keys(rawOpts).sort().map(k => String(rawOpts[k]).trim());
+    if (options.length < 2) return null;
+
+    let ci = -1;
+    const ra = pick(raw, schema.question.answer, null);
+    if (typeof ra === 'number')
+        ci = (ra >= 0 && ra < options.length) ? ra : (ra >= 1 && ra <= options.length) ? ra-1 : -1;
+    else if (typeof ra === 'string') {
+        const n = parseInt(ra, 10);
+        if (!isNaN(n)) ci = (n >= 0 && n < options.length) ? n : (n >= 1 && n <= options.length) ? n-1 : -1;
+        else if (/^[A-Da-d]$/.test(ra)) ci = ra.toUpperCase().charCodeAt(0) - 65;
+        else ci = options.findIndex(o => o.toLowerCase() === ra.toLowerCase());
     }
-
-    if (options.length < 2) {
-        if (CONFIG.DEBUG) console.warn('Q' + index + ': insufficient options');
-        return null;
-    }
-
-    let correctIndex = -1;
-    const rawAns = pick(raw, schema.question.answer, null);
-
-    if (typeof rawAns === 'number') {
-        correctIndex = (rawAns >= 0 && rawAns < options.length) ? rawAns :
-                       (rawAns >= 1 && rawAns <= options.length) ? rawAns - 1 : -1;
-    } else if (typeof rawAns === 'string') {
-        const num = parseInt(rawAns, 10);
-        if (!isNaN(num)) {
-            correctIndex = (num >= 0 && num < options.length) ? num :
-                           (num >= 1 && num <= options.length) ? num - 1 : -1;
-        } else if (/^[A-Da-d]$/.test(rawAns)) {
-            correctIndex = rawAns.toUpperCase().charCodeAt(0) - 65;
-        } else {
-            correctIndex = options.findIndex(o => o.toLowerCase() === rawAns.toLowerCase());
-        }
-    }
-
-    if (correctIndex < 0 || correctIndex >= options.length) {
-        if (CONFIG.DEBUG) console.warn('Q' + index + ': bad answer', rawAns);
-        return null;
-    }
-
-    return { text, options, correctIndex };
+    if (ci < 0 || ci >= options.length) return null;
+    return { text, options, correctIndex: ci };
 }
 
 function normaliseWorksheet(raw) {
     if (!raw) return null;
-    const schema  = mergeSchema(raw.schema);
-    const title   = pick(raw, schema.worksheet.title, 'Untitled Worksheet');
-    const image   = pick(raw, schema.worksheet.image, '');
-    const rawQs   = pick(raw, schema.worksheet.questions, []);
-
-    if (!Array.isArray(rawQs) || rawQs.length === 0) {
-        if (CONFIG.DEBUG) console.warn('No questions found. Keys:', Object.keys(raw));
-        return null;
-    }
-
+    const schema = mergeSchema(raw.schema);
+    const title  = pick(raw, schema.worksheet.title, 'Untitled');
+    const image  = pick(raw, schema.worksheet.image, '');
+    const rawQs  = pick(raw, schema.worksheet.questions, []);
+    if (!Array.isArray(rawQs) || !rawQs.length) return null;
     const questions = [];
-    rawQs.forEach((q, i) => {
-        const nq = normaliseQuestion(q, i, schema);
-        if (nq) questions.push(nq);
-    });
-
-    if (questions.length === 0) return null;
-    return { title, image, questions };
+    rawQs.forEach((q, i) => { const nq = normaliseQuestion(q, i, schema); if (nq) questions.push(nq); });
+    return questions.length ? { title, image, questions } : null;
 }
-
-/* ── Fetching ── */
 
 async function resolveBase() {
     if (STATE.baseResolved) return STATE.baseResolved;
-
-    const localBase = './' + CONFIG.QUESTIONS_PATH + '/';
-    try {
-        const r = await fetch(localBase + CONFIG.INDEX_FILE, { method: 'HEAD' });
-        if (r.ok) { STATE.baseResolved = localBase; return localBase; }
-    } catch (_) {}
-
-    const ghBase = 'https://raw.githubusercontent.com/' +
-        CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO + '/' +
-        CONFIG.GITHUB_BRANCH + '/' + CONFIG.QUESTIONS_PATH + '/';
-    STATE.baseResolved = ghBase;
-    return ghBase;
+    const local = './' + CONFIG.QUESTIONS_PATH + '/';
+    try { const r = await fetch(local + CONFIG.INDEX_FILE, {method:'HEAD'}); if (r.ok) return STATE.baseResolved = local; } catch(_){}
+    return STATE.baseResolved = 'https://raw.githubusercontent.com/' +
+        CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO + '/' + CONFIG.GITHUB_BRANCH + '/' + CONFIG.QUESTIONS_PATH + '/';
 }
 
 async function fetchJSON(url) {
@@ -375,88 +256,55 @@ async function fetchJSON(url) {
     return r.json();
 }
 
-async function loadWorksheetFile(filePath) {
+async function loadWorksheetFile(fp) {
     const base = await resolveBase();
-    try { return await fetchJSON(base + filePath); } catch (_) {}
-
-    const filename = filePath.split('/').pop();
-    for (const folder of CONFIG.FALLBACK_FOLDERS) {
-        try {
-            const data = await fetchJSON(base + folder + '/' + filename);
-            if (CONFIG.DEBUG) console.log('Found via fallback:', folder + '/' + filename);
-            return data;
-        } catch (_) {}
-    }
-    throw new Error('Cannot find ' + filename);
+    try { return await fetchJSON(base + fp); } catch(_){}
+    const fn = fp.split('/').pop();
+    for (const f of CONFIG.FALLBACK_FOLDERS)
+        try { return await fetchJSON(base + f + '/' + fn); } catch(_){}
+    throw new Error('Cannot find ' + fn);
 }
 
 /* ══════════════════════════════════════════════
-   SCREEN & UI HELPERS
+   UI HELPERS
    ══════════════════════════════════════════════ */
 
 function showScreen(id) {
     $$('.screen').forEach(s => s.classList.remove('active'));
-    const el = $('#' + id);
-    if (el) el.classList.add('active');
+    const el = $('#' + id); if (el) el.classList.add('active');
 }
 
 function showToast(msg, ms) {
-    if (ms === undefined) ms = 2200;
-    const t = $('#toast');
-    if (!t) return;
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), ms);
+    const t = $('#toast'); if (!t) return;
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), ms || 2200);
 }
 
-function clearTimers() {
-    STATE.timers.forEach(clearTimeout);
-    STATE.timers = [];
-}
-
-function addTimer(fn, ms) {
-    const id = setTimeout(fn, ms);
-    STATE.timers.push(id);
-    return id;
-}
+function clearTimers() { STATE.timers.forEach(clearTimeout); STATE.timers = []; }
+function addTimer(fn, ms) { const id = setTimeout(fn, ms); STATE.timers.push(id); return id; }
 
 /* ══════════════════════════════════════════════
    LAUNCHER
    ══════════════════════════════════════════════ */
 
 async function buildLauncher() {
-    const list  = $('#worksheet-list');
-    const errEl = $('#launcher-error');
+    const list = $('#worksheet-list'), errEl = $('#launcher-error');
     if (!list) return;
-
     try {
-        const base  = await resolveBase();
-        const index = await fetchJSON(base + CONFIG.INDEX_FILE);
-
-        if (!Array.isArray(index) || index.length === 0) {
-            list.innerHTML = '<p class="loading-msg">No worksheets found.</p>';
-            return;
-        }
-
+        const base = await resolveBase(), index = await fetchJSON(base + CONFIG.INDEX_FILE);
+        if (!Array.isArray(index) || !index.length) { list.innerHTML = '<p class="loading-msg">No worksheets found.</p>'; return; }
         list.innerHTML = '';
         index.forEach(ws => {
-            const card = document.createElement('button');
-            card.className = 'ws-card';
-            card.innerHTML =
-                '<span class="ws-icon">' + (ws.icon || '📄') + '</span>' +
-                '<span class="ws-info">' +
-                    '<strong>' + (ws.title || 'Untitled') + '</strong>' +
-                    '<small>' + (ws.subject || '') + ' · ' + (ws.topic || '') + ' · ' + (ws.questionCount || '?') + ' Qs</small>' +
-                '</span>';
-            card.addEventListener('click', () => launchGame(ws.file));
-            list.appendChild(card);
+            const c = document.createElement('button');
+            c.className = 'ws-card';
+            c.innerHTML = '<span class="ws-icon">' + (ws.icon||'📄') + '</span>' +
+                '<span class="ws-info"><strong>' + (ws.title||'Untitled') + '</strong>' +
+                '<small>' + (ws.subject||'') + ' · ' + (ws.topic||'') + ' · ' + (ws.questionCount||'?') + ' Qs</small></span>';
+            c.addEventListener('click', () => launchGame(ws.file));
+            list.appendChild(c);
         });
     } catch (e) {
-        if (errEl) {
-            errEl.textContent = 'Failed to load worksheets: ' + e.message;
-            errEl.classList.remove('hidden');
-        }
-        if (CONFIG.DEBUG) console.error(e);
+        if (errEl) { errEl.textContent = 'Failed: ' + e.message; errEl.classList.remove('hidden'); }
     }
 }
 
@@ -464,69 +312,38 @@ async function buildLauncher() {
    GAME ENGINE
    ══════════════════════════════════════════════ */
 
-async function launchGame(filePath) {
-    if (!filePath) return;
+async function launchGame(fp) {
+    if (!fp) return;
     clearTimers();
-    STATE.currentFilePath = filePath;
-
+    STATE.currentFilePath = fp;
     try {
-        const raw = await loadWorksheetFile(filePath);
-        const ws  = normaliseWorksheet(raw);
+        const raw = await loadWorksheetFile(fp), ws = normaliseWorksheet(raw);
         if (!ws) { showToast('Failed to parse worksheet'); return; }
-
-        STATE.worksheet    = ws;
-        STATE.questions    = ws.questions;
-        STATE.total        = ws.questions.length;
-        STATE.currentIndex = 0;
-        STATE.score        = 0;
-        STATE.locked       = false;
-        STATE.gambleActive = false;
-
-        computeGrid();
-        setupGameScreen();
-        showScreen('game-screen');
-        buildGrid();
-        showQuestion();
-    } catch (e) {
-        showToast('Error: ' + e.message);
-        if (CONFIG.DEBUG) console.error(e);
-    }
+        Object.assign(STATE, { worksheet:ws, questions:ws.questions, total:ws.questions.length,
+            currentIndex:0, score:0, locked:false, gambleActive:false });
+        computeGrid(); setupGameScreen(); showScreen('game-screen'); buildGrid(); showQuestion();
+    } catch (e) { showToast('Error: ' + e.message); }
 }
 
 function computeGrid() {
-    const n    = STATE.total;
-    const cols = Math.ceil(Math.sqrt(n * 1.5));
-    const rows = Math.ceil(n / cols);
-    STATE.gridCols = cols;
-    STATE.gridRows = rows;
+    const n = STATE.total;
+    STATE.gridCols = Math.ceil(Math.sqrt(n * 1.5));
+    STATE.gridRows = Math.ceil(n / STATE.gridCols);
 }
 
 function placeholderSVG() {
     return 'data:image/svg+xml,' + encodeURIComponent(
         '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="533">' +
         '<rect fill="#16213e" width="800" height="533"/>' +
-        '<text x="400" y="250" text-anchor="middle" fill="#556" font-size="48">🔍</text>' +
-        '<text x="400" y="300" text-anchor="middle" fill="#556" font-size="18" font-family="sans-serif">Mystery Image</text>' +
-        '</svg>'
-    );
+        '<text x="400" y="266" text-anchor="middle" fill="#556" font-size="40" font-family="sans-serif">🔍 Mystery Image</text></svg>');
 }
 
 function setupGameScreen() {
-    const ws      = STATE.worksheet;
-    const titleEl = $('#worksheet-title');
-    const imgEl   = $('#reveal-image');
-
-    if (titleEl) titleEl.textContent = ws.title;
-
-    if (imgEl) {
-        imgEl.crossOrigin = 'anonymous';
-        imgEl.src = ws.image || placeholderSVG();
-        imgEl.style.display = 'block';
-        imgEl.onerror = function () { this.src = placeholderSVG(); };
-    }
-
-    const overlay = $('#end-overlay');
-    if (overlay) overlay.classList.add('hidden');
+    const ws = STATE.worksheet;
+    const t = $('#worksheet-title'); if (t) t.textContent = ws.title;
+    const img = $('#reveal-image');
+    if (img) { img.src = ws.image || placeholderSVG(); img.style.display = 'block'; img.onerror = function(){ this.src = placeholderSVG(); }; }
+    const o = $('#end-overlay'); if (o) o.classList.add('hidden');
 }
 
 /* ══════════════════════════════════════════════
@@ -534,117 +351,146 @@ function setupGameScreen() {
    ══════════════════════════════════════════════ */
 
 function buildGrid() {
-    const overlay = $('#grid-overlay');
-    if (!overlay) return;
-
-    overlay.innerHTML = '';
-    overlay.style.gridTemplateColumns = 'repeat(' + STATE.gridCols + ', 1fr)';
-    overlay.style.gridTemplateRows    = 'repeat(' + STATE.gridRows + ', 1fr)';
-
-    const total = STATE.gridCols * STATE.gridRows;
+    const ov = $('#grid-overlay'); if (!ov) return;
+    ov.innerHTML = '';
+    ov.style.gridTemplateColumns = 'repeat(' + STATE.gridCols + ',1fr)';
+    ov.style.gridTemplateRows    = 'repeat(' + STATE.gridRows + ',1fr)';
     STATE.tiles = [];
-
-    for (let i = 0; i < total; i++) {
-        const tile = document.createElement('div');
-        tile.className = 'grid-tile';
-        tile.dataset.index = i;
-        overlay.appendChild(tile);
-        STATE.tiles.push(tile);
+    for (let i = 0, n = STATE.gridCols * STATE.gridRows; i < n; i++) {
+        const d = document.createElement('div');
+        d.className = 'grid-tile'; ov.appendChild(d); STATE.tiles.push(d);
     }
 }
 
-function getCoveredTiles() {
-    return STATE.tiles.filter(t => !t.classList.contains('revealed'));
+const covered  = () => STATE.tiles.filter(t => !t.classList.contains('revealed'));
+const revealed = () => STATE.tiles.filter(t =>  t.classList.contains('revealed'));
+
+function removeTile() {
+    const c = covered(); if (!c.length) return false;
+    c[Math.floor(Math.random()*c.length)].classList.add('revealed'); return true;
 }
 
-function getRevealedTiles() {
-    return STATE.tiles.filter(t => t.classList.contains('revealed'));
-}
-
-function removeRandomTile() {
-    const covered = getCoveredTiles();
-    if (covered.length === 0) return false;
-    covered[Math.floor(Math.random() * covered.length)].classList.add('revealed');
-    return true;
-}
-
-function restoreRandomTile() {
-    const revealed = getRevealedTiles();
-    if (revealed.length === 0) return false;
-    revealed[Math.floor(Math.random() * revealed.length)].classList.remove('revealed');
-    return true;
+function restoreTile() {
+    const r = revealed(); if (!r.length) return false;
+    r[Math.floor(Math.random()*r.length)].classList.remove('revealed'); return true;
 }
 
 function cascadeReveal() {
-    const covered = getCoveredTiles();
-    covered.forEach((tile, i) => {
-        addTimer(() => tile.classList.add('revealed', 'cascade'), i * 80);
-    });
+    covered().forEach((t, i) => addTimer(() => t.classList.add('revealed','cascade'), i * 80));
 }
 
 /* ══════════════════════════════════════════════
    QUESTIONS
    ══════════════════════════════════════════════ */
 
-function shuffleArray(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
+function shuffle(a) {
+    const b = [...a];
+    for (let i = b.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
+    return b;
 }
 
 function showQuestion() {
     if (STATE.currentIndex >= STATE.total) { endGame(); return; }
+    STATE.locked = false; STATE.gambleActive = false;
 
-    STATE.locked       = false;
-    STATE.gambleActive = false;
+    const q = STATE.questions[STATE.currentIndex];
+    const qEl = $('#question-text'), oEl = $('#options-container');
+    const pEl = $('#progress-tracker'), gSlot = $('#gamble-slot');
 
-    const q          = STATE.questions[STATE.currentIndex];
-    const qTextEl    = $('#question-text');
-    const optsEl     = $('#options-container');
-    const progEl     = $('#progress-tracker');
-    const gambleSlot = $('#gamble-slot');
+    if (qEl) { qEl.innerHTML = formatQuestionText(q.text); typesetMath(qEl); }
+    if (pEl) pEl.textContent = 'Question ' + (STATE.currentIndex+1) + ' of ' + STATE.total + '  ·  Score: ' + STATE.score;
 
-    /* Question text */
-    if (qTextEl) {
-        qTextEl.innerHTML = formatQuestionText(q.text);
-        typesetMath(qTextEl);
-    }
-
-    /* Progress */
-    if (progEl) {
-        progEl.textContent = 'Question ' + (STATE.currentIndex + 1) + ' of ' + STATE.total +
-                             '  ·  Score: ' + STATE.score;
-    }
-
-    /* Gamble — only show if there are tiles to gain AND tiles to risk */
-    if (gambleSlot) {
-        gambleSlot.innerHTML = '';
-        const coveredCount  = getCoveredTiles().length;
-        const revealedCount = getRevealedTiles().length;
-
-        if (CONFIG.GAMBLE_ENABLED &&
-            STATE.currentIndex > 0 &&
-            coveredCount > 0 &&
-            revealedCount >= CONFIG.GAMBLE_PENALTY) {
-
+    /* Gamble — only when tiles exist to gain AND risk */
+    if (gSlot) {
+        gSlot.innerHTML = '';
+        if (CONFIG.GAMBLE_ENABLED && STATE.currentIndex > 0 &&
+            covered().length > 0 && revealed().length >= CONFIG.GAMBLE_PENALTY) {
             const btn = document.createElement('button');
             btn.className = 'gamble-btn';
-            btn.textContent = '🎲 Bet a tile? (+' + CONFIG.GAMBLE_REWARD +
-                              ' if correct, −' + CONFIG.GAMBLE_PENALTY + ' if wrong)';
-            btn.addEventListener('click', () => {
-                STATE.gambleActive = true;
-                btn.disabled = true;
-                btn.textContent = '🎲 Bet placed!';
-                btn.classList.add('active');
-            });
-            gambleSlot.appendChild(btn);
+            btn.textContent = '🎲 Bet a tile? (+' + CONFIG.GAMBLE_REWARD + ' correct, −' + CONFIG.GAMBLE_PENALTY + ' wrong)';
+            btn.onclick = () => { STATE.gambleActive = true; btn.disabled = true; btn.textContent = '🎲 Bet placed!'; btn.classList.add('active'); };
+            gSlot.appendChild(btn);
         }
     }
 
-    /* Options */
-    if (optsEl) {
-        optsEl.innerHTML = '';
-        const indices  = q.options.map((_, i)
+    if (oEl) {
+        oEl.innerHTML = '';
+        const order = CONFIG.SHUFFLE_OPTIONS ? shuffle(q.options.map((_,i)=>i)) : q.options.map((_,i)=>i);
+        order.forEach(oi => {
+            const b = document.createElement('button');
+            b.className = 'option-btn';
+            b.innerHTML = formatOption(q.options[oi]);
+            b.dataset.oi = oi;
+            b.onclick = () => handleAnswer(oi, b);
+            oEl.appendChild(b);
+        });
+        typesetMath(oEl);
+    }
+}
+
+function handleAnswer(ci, btn) {
+    if (STATE.locked) return;
+    STATE.locked = true;
+    const q = STATE.questions[STATE.currentIndex], ok = ci === q.correctIndex;
+
+    $$('.option-btn').forEach(b => { b.disabled = true; if (+b.dataset.oi === q.correctIndex) b.classList.add('correct'); });
+
+    if (ok) {
+        btn.classList.add('correct'); STATE.score++;
+        let gained = removeTile() ? 1 : 0;
+        if (STATE.gambleActive) { for (let i=0;i<CONFIG.GAMBLE_REWARD;i++) if(removeTile()) gained++; showToast('🎲 Won! +'+gained+' tiles'); }
+        else showToast('✅ Correct!');
+        addTimer(() => { STATE.currentIndex++; showQuestion(); }, CONFIG.DELAY_CORRECT);
+    } else {
+        btn.classList.add('wrong');
+        const cv = covered();
+        if (cv.length) { const p = cv[Math.floor(Math.random()*cv.length)]; p.classList.add('glitch'); addTimer(()=>p.classList.remove('glitch'),800); }
+        if (STATE.gambleActive) {
+            let lost = 0; for (let i=0;i<CONFIG.GAMBLE_PENALTY;i++) if(restoreTile()) lost++;
+            showToast('🎲 Lost! −'+lost+' tile'+(lost!==1?'s':''));
+        } else showToast('❌ Wrong!');
+        addTimer(() => { STATE.currentIndex++; showQuestion(); }, CONFIG.DELAY_WRONG);
+    }
+}
+
+/* ══════════════════════════════════════════════
+   END GAME
+   ══════════════════════════════════════════════ */
+
+function endGame() {
+    clearTimers();
+    const needed = Math.ceil(STATE.total * CONFIG.WIN_THRESHOLD), won = STATE.score >= needed;
+    const ov = $('#end-overlay'), ti = $('#end-title'), msg = $('#end-message'), rb = $('#retry-btn');
+    if (won) {
+        cascadeReveal();
+        if (ti) ti.textContent = '🎉 Image Revealed!';
+        if (msg) msg.textContent = STATE.score+'/'+STATE.total+' ('+Math.round(STATE.score/STATE.total*100)+'%). Amazing!';
+        if (rb) rb.classList.add('hidden');
+    } else {
+        if (ti) ti.textContent = '😔 Not Quite…';
+        if (msg) msg.textContent = STATE.score+'/'+STATE.total+'. Needed '+needed+'. Try again!';
+        if (rb) rb.classList.remove('hidden');
+    }
+    if (ov) ov.classList.remove('hidden');
+}
+
+function goBack() {
+    clearTimers();
+    const ov = $('#end-overlay'); if (ov) ov.classList.add('hidden');
+    showScreen('launcher-screen');
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    const bb = $('#back-btn'), eb = $('#end-back-btn'), rb = $('#retry-btn');
+    if (bb) bb.onclick = goBack;
+    if (eb) eb.onclick = goBack;
+    if (rb) rb.onclick = () => { const ov=$('#end-overlay'); if(ov) ov.classList.add('hidden'); if(STATE.currentFilePath) launchGame(STATE.currentFilePath); };
+
+    const rp = sessionStorage.getItem('mgr_retry');
+    if (rp) { sessionStorage.removeItem('mgr_retry'); launchGame(rp); }
+    else buildLauncher();
+});
