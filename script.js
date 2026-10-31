@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — script.js  (v4)
+   MYSTERY GRID REVEAL — script.js  (v4.1)
    Math parser · Grid engine · Gamble mechanics · Threshold win
    ═══════════════════════════════════════════════════════ */
 
@@ -167,10 +167,34 @@ function isPureExpression(s) {
     return true;
 }
 
+// ── Math-in-prose scanner (v4.1) ──
+//
+// Fixes two bugs from v3.1:
+//   1. [ ] were missing from MATH_CHARS, breaking expressions
+//      like "3[2b - (4a - 5b)]" into floating fragments.
+//   2. Spaces before English letters extended the math run into
+//      prose, making words like "cm and width" render in italic
+//      TeX font (the "cursive" look).
+//
+// New rule: a space is only included in the math run if the
+// character AFTER the space is a digit, operator, or bracket —
+// NOT a letter. This keeps "4(3x - 5) - 2(x - 7)" together
+// but stops "(3x + 1) cm and width" at the space before "cm".
+
 function wrapMathRuns(text) {
-    const MATH_START = /[+\-×÷=^/(√∛<>≤≥≠≈\d]/;
-    const MATH_CHARS = /[+\-×÷=^/()√∛<>≤≥≠≈\d\w.]/;
+    // Characters that can START a math run
+    const MATH_START = /[+\-×÷=^/([\]√∛<>≤≥≠≈\d]/;
+
+    // Characters that can CONTINUE a math run (includes letters for variables like 3x)
+    const MATH_CHARS = /[+\-×÷=^/()[\]√∛<>≤≥≠≈\d\w.]/;
+
+    // Operators that prove a run is "math" (not just a bare number)
     const MATH_OPS   = /[+\-×÷=^/√∛<>≤≥≠≈]/;
+
+    // Characters allowed AFTER a space to continue the run
+    // (digits, operators, brackets — but NOT letters)
+    const AFTER_SPACE = /[+\-×÷=^/([\]√∛<>≤≥≠≈\d]/;
+
     let result = '';
     let i = 0;
 
@@ -178,16 +202,19 @@ function wrapMathRuns(text) {
         if (MATH_START.test(text[i]) && !(i > 0 && /[a-zA-Z]/.test(text[i - 1]))) {
             let end = i;
             let hasOp = false;
+
             while (end < text.length) {
                 if (MATH_CHARS.test(text[end])) {
                     if (MATH_OPS.test(text[end])) hasOp = true;
                     end++;
-                } else if (text[end] === ' ' && end + 1 < text.length && MATH_CHARS.test(text[end + 1])) {
+                } else if (text[end] === ' ' && end + 1 < text.length && AFTER_SPACE.test(text[end + 1])) {
+                    // Only cross a space if next char is digit/operator/bracket
                     end++;
                 } else {
                     break;
                 }
             }
+
             const segment = text.slice(i, end).trim();
             if (hasOp && segment.length > 1) {
                 result += '\\(' + toLatex(segment) + '\\)';
@@ -200,23 +227,29 @@ function wrapMathRuns(text) {
             i++;
         }
     }
+
     return result;
 }
+
+// ── PUBLIC ENTRY POINT ──
 
 function parseMathToLatex(raw) {
     if (!raw || typeof raw !== 'string') return raw;
     try {
         let s = raw;
+
         const currencySlots = [];
         s = s.replace(/\$(\s?\d[\d,.]*)/g, (_, g) => {
             currencySlots.push('$' + g);
             return PH_OPEN + 'CUR' + (currencySlots.length - 1) + PH_CLOSE;
         });
+
         const explicitSlots = [];
         s = s.replace(/\$([^$]+)\$/g, (_, g) => {
             explicitSlots.push('\\(' + toLatex(g) + '\\)');
             return PH_OPEN + 'EXP' + (explicitSlots.length - 1) + PH_CLOSE;
         });
+
         const unitSlots = [];
         for (const [unit] of UNIT_LIST) {
             const esc = unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -225,14 +258,17 @@ function parseMathToLatex(raw) {
                 return PH_OPEN + 'UNT' + (unitSlots.length - 1) + PH_CLOSE;
             });
         }
+
         if (isPureExpression(s)) {
             s = '\\(' + toLatex(s) + '\\)';
         } else {
             s = wrapMathRuns(s);
         }
+
         s = s.replace(new RegExp(PH_OPEN + 'UNT(\\d+)' + PH_CLOSE, 'g'), (_, i) => unitSlots[+i]);
         s = s.replace(new RegExp(PH_OPEN + 'EXP(\\d+)' + PH_CLOSE, 'g'), (_, i) => explicitSlots[+i]);
         s = s.replace(new RegExp(PH_OPEN + 'CUR(\\d+)' + PH_CLOSE, 'g'), (_, i) => currencySlots[+i]);
+
         return s;
     } catch (e) {
         console.warn('Math parse fallback:', e);
@@ -266,13 +302,9 @@ function shuffleArray(arr) {
 function getWinTarget() {
     const total = STATE.dataset.questions.length;
     const t = CONFIG.WIN_THRESHOLD;
-    if (typeof t === 'number' && t > 0 && t < 1) {
-        return Math.ceil(total * t);
-    }
-    if (typeof t === 'number' && t >= 1) {
-        return Math.min(Math.floor(t), total);
-    }
-    return total; // fallback: all correct
+    if (typeof t === 'number' && t > 0 && t < 1) return Math.ceil(total * t);
+    if (typeof t === 'number' && t >= 1) return Math.min(Math.floor(t), total);
+    return total;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -421,7 +453,6 @@ async function loadQuestion() {
         optContainer.appendChild(btn);
     });
 
-    // Progress shows correct count vs win target
     const total = STATE.dataset.questions.length;
     const target = getWinTarget();
     const revealed = STATE.revealedHistory.length;
@@ -437,7 +468,7 @@ async function loadQuestion() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 7 — ANSWER CHECKING (v4: threshold win)
+   SECTION 7 — ANSWER CHECKING
    ═══════════════════════════════════════════════════════ */
 
 function checkAnswer(selectedIndex) {
@@ -462,7 +493,6 @@ function checkAnswer(selectedIndex) {
 
         if (wasGambling) showEncouragement('gamble-win');
 
-        // Check win threshold
         if (STATE.correctCount >= getWinTarget()) {
             setTimeout(() => cascadeRevealAndEnd(), 600);
             return;
@@ -489,7 +519,6 @@ function checkAnswer(selectedIndex) {
 
         setTimeout(() => {
             STATE.currentIndex++;
-            // Check if we've run out of questions without hitting threshold
             if (STATE.currentIndex >= STATE.dataset.questions.length) {
                 cascadeRevealAndEnd();
             } else {
@@ -632,37 +661,25 @@ function showEncouragement(type) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 9 — CASCADE REVEAL & END GAME (v4)
+   SECTION 9 — CASCADE REVEAL & END GAME
    ═══════════════════════════════════════════════════════ */
 
 function cascadeRevealAndEnd() {
-    // Find all tiles still covered
     const remaining = [];
     document.querySelectorAll('.grid-tile').forEach(tile => {
-        if (!tile.classList.contains('revealed')) {
-            remaining.push(tile);
-        }
+        if (!tile.classList.contains('revealed')) remaining.push(tile);
     });
 
-    if (remaining.length === 0) {
-        endGame();
-        return;
-    }
+    if (remaining.length === 0) { endGame(); return; }
 
-    // Stagger the reveal: each tile flips away 80ms after the previous
     remaining.forEach((tile, i) => {
-        setTimeout(() => {
-            tile.classList.add('cascade-reveal');
-        }, i * 80);
+        setTimeout(() => tile.classList.add('cascade-reveal'), i * 80);
     });
 
-    // After all tiles have animated, show end screen
-    const totalDelay = remaining.length * 80 + 600;
-    setTimeout(() => endGame(), totalDelay);
+    setTimeout(() => endGame(), remaining.length * 80 + 600);
 }
 
 function endGame() {
-    // Make sure ALL tiles are revealed
     document.querySelectorAll('.grid-tile').forEach(tile => {
         tile.classList.add('revealed');
         tile.classList.remove('cascade-reveal');
