@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — script.js  (v2)
+   MYSTERY GRID REVEAL — script.js  (v2.1)
    Math parser · Grid engine · Gamble mechanics
    ═══════════════════════════════════════════════════════ */
 
@@ -108,7 +108,7 @@ function grabRightOperand(s, slashIdx) {
     return { text: right, end: s.length };
 }
 
-// ── Core converters (operate on a single expression string) ──
+// ── Core converters ──
 
 function convertFractions(s) {
     let safety = 0;
@@ -131,10 +131,8 @@ function convertRoots(s) {
 }
 
 function convertScripts(s) {
-    // Superscripts: x^(expr) or x^char
     s = s.replace(/\^(\([^)]+\))/g, (_, g) => '^{' + g.slice(1, -1) + '}');
     s = s.replace(/\^(\w)/g, '^{$1}');
-    // Subscripts: H_2O or x_(expr)
     s = s.replace(/_(\([^)]+\))/g, (_, g) => '_{' + g.slice(1, -1) + '}');
     s = s.replace(/_(\w)/g, '_{$1}');
     return s;
@@ -162,7 +160,7 @@ function convertSymbols(s) {
     return s;
 }
 
-// ── LaTeX builder for a single math fragment ──
+// ── LaTeX builder ──
 
 function toLatex(raw) {
     let s = raw.trim();
@@ -175,24 +173,19 @@ function toLatex(raw) {
     return s;
 }
 
-// ── Expression detector ──
+// ── Expression detector (v2.1 — requires at least one math operator) ──
 
 function isPureExpression(s) {
     const t = s.trim();
     if (!t) return false;
-    if (/[.!?;:]/.test(t)) return false;                       // prose punctuation
-    if (/\b(the|is|are|was|were|find|solve|given|correct|express|estimate|which|how|what|a |an |of |to |in |and |or |if |that|this|has|have|had|per|each|total|sum|between|after|before|when|rounded|nearest|significant|figure|integer|value|possible|satisfy|conditions|pair|largest|smallest|difference|number|bought|paid|received|change|travels|returns|trip|took|less|scored|answer|correctly|flash|together|packs|identical|left|over|maximum|measures|pave|completely|without|cutting|lap|times|meet|starting|point|positive|such|perfect|square|cube|greater|than|floor|rectangular|side|length|width|perimeter|area|mother|old|son|years|consecutive|odd|even|pens|notebooks|items|motorist|distance|towns|quiz|marks|deducted|wrong|unanswered|baker|needs|flour|loaf|loaves|full|student|estimates|over|under|cannot|determined|exact|vehicle|travels|shopper|buys|estimating|total)\b/i.test(t)) return false;
+    if (/[.!?;:]/.test(t)) return false;
+    if (/\b(the|is|are|was|were|find|solve|given|correct|express|estimate|which|how|what|a |an |of |to |in |and |or |if |that|this|has|have|had|per|each|total|sum|between|after|before|when|rounded|nearest|significant|figure|integer|value|possible|satisfy|conditions|pair|largest|smallest|difference|number|bought|paid|received|change|travels|returns|trip|took|less|scored|answer|correctly|flash|together|packs|identical|left|over|maximum|measures|pave|completely|without|cutting|lap|times|meet|starting|point|positive|such|perfect|square|cube|greater|than|floor|rectangular|side|length|width|perimeter|area|mother|old|son|years|consecutive|odd|even|pens|notebooks|items|motorist|distance|towns|quiz|marks|deducted|wrong|unanswered|baker|needs|flour|loaf|loaves|full|student|estimates|over|under|cannot|determined|exact|vehicle|shopper|buys|estimating)\b/i.test(t)) return false;
     const mathChars = (t.match(/[+\-×÷=^/()√∛<>≤≥≠≈]/g) || []).length;
-    const digits = (t.match(/\d/g) || []).length;
-    if (mathChars + digits < 2) return false;
+    if (mathChars < 1) return false;
     return true;
 }
 
-// ── Parse a mixed text+math string ──
-
-function parseItem(s) {
-    return isPureExpression(s) ? '\\(' + toLatex(s) + '\\)' : s;
-}
+// ── Parse helpers ──
 
 function parseRun(s) {
     if (isPureExpression(s)) return '\\(' + toLatex(s) + '\\)';
@@ -200,7 +193,6 @@ function parseRun(s) {
 }
 
 function wrapMathRuns(text) {
-    // Split on spaces but keep math-looking clusters together
     const tokens = text.split(/(\s+)/);
     let result = '';
     let mathBuf = '';
@@ -218,18 +210,6 @@ function wrapMathRuns(text) {
     }
     if (mathBuf) result += parseRun(mathBuf.trim());
     return result;
-}
-
-// ── Placeholder helpers ──
-
-function restoreTex(s) {
-    return s.replace(new RegExp(PH_OPEN, 'g'), '\\(')
-            .replace(new RegExp(PH_CLOSE, 'g'), '\\)');
-}
-
-function restorePlainText(s) {
-    return s.replace(new RegExp(PH_OPEN, 'g'), '')
-            .replace(new RegExp(PH_CLOSE, 'g'), '');
 }
 
 // ── PUBLIC ENTRY POINT ──
@@ -346,7 +326,7 @@ async function loadWorksheetIndex() {
             return;
         }
         listEl.innerHTML = '';
-        index.forEach((ws, i) => {
+        index.forEach((ws) => {
             const card = document.createElement('button');
             card.className = 'worksheet-card';
             card.setAttribute('aria-label', `Start ${ws.title}`);
@@ -430,7 +410,6 @@ async function loadQuestion() {
     STATE.gambleMode = false;
     document.querySelector('.game-container')?.classList.remove('gamble-active');
 
-    // Remove any leftover gamble prompt
     const oldPrompt = document.getElementById('gamble-prompt');
     if (oldPrompt) oldPrompt.remove();
 
@@ -559,7 +538,6 @@ function triggerGlitchPeek() {
     overlay.classList.add('glitch');
     setTimeout(() => overlay.classList.remove('glitch'), 600);
 
-    // Briefly peek a hidden tile
     const hiddenTiles = STATE.shuffledTiles.filter(i => {
         const t = document.getElementById(`tile-${i}`);
         return t && !t.classList.contains('revealed');
@@ -678,7 +656,6 @@ function endGame() {
    ═══════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Back button
     document.getElementById('back-btn').addEventListener('click', () => {
         if (confirm('Leave this worksheet? Your progress will be lost.')) {
             showScreen('launcher-screen');
