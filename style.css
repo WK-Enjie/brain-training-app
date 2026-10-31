@@ -405,3 +405,272 @@ body {
     margin-bottom: 0.65rem;
 }
 .reward { font-weight: 700; color: var(--color-correct); }
+.risk   { font-weight: 700; color: var(--color-wrong); }
+
+.gamble-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.gamble-btn {
+    min-height: 48px;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform var(--transition-fast),
+                box-shadow var(--transition-fast);
+}
+.gamble-btn:active { transform: scale(0.96); }
+
+.gamble-btn.yes {
+    background: var(--color-gamble-gold);
+    color: #fff;
+    border-color: #d97706;
+}
+.gamble-btn.yes:hover {
+    box-shadow: 0 0 12px var(--color-gamble-glow);
+}
+
+.gamble-btn.no {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+}
+.gamble-btn.no:hover {
+    background: var(--color-bg);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ENCOURAGEMENT TOAST
+   ═══════════════════════════════════════════════════════ */
+.encouragement-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--color-text);
+    color: #fff;
+    padding: 0.65rem 1.2rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    max-width: 92vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 100;
+    pointer-events: none;
+}
+.encouragement-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════════
+   END-GAME SCREEN
+   ═══════════════════════════════════════════════════════ */
+.end-game-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+.end-game-panel h2 { font-size: 1.5rem; }
+.end-game-panel p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+#back-to-launcher {
+    min-height: 48px;
+    padding: 0.7rem 1.5rem;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+#back-to-launcher:hover {
+    background: var(--color-primary-hover);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+@keyframes glitch {
+    0%   { transform: translate(0); filter: hue-rotate(0deg); }
+    20%  { transform: translate(-3px, 2px); filter: hue-rotate(90deg); }
+    40%  { transform: translate(3px, -2px); filter: hue-rotate(180deg); }
+    60%  { transform: translate(-2px, -1px); filter: hue-rotate(270deg); }
+    80%  { transform: translate(2px, 1px); filter: hue-rotate(360deg); }
+    100% { transform: translate(0); filter: hue-rotate(0deg); }
+}
+
+@keyframes recover {
+    0%   { background: var(--color-wrong); opacity: 0.7; }
+    100% { background: var(--color-tile); opacity: 1; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 8px var(--color-gamble-glow); }
+    50%      { box-shadow: 0 0 20px var(--color-gamble-glow),
+                             0 0 40px rgba(245, 158, 11, 0.15); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+}
+
+@keyframes celebrate-reveal {
+    0%   { opacity: 1; transform: scale(1); }
+    50%  { opacity: 0.5; transform: scale(1.15); background: var(--color-gamble-gold); }
+    100% { opacity: 0; transform: scale(0.85); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 374px) {
+    .launcher-container h1 { font-size: 1.3rem; }
+    #question-text { font-size: 0.88rem; }
+    .option-btn { font-size: 0.84rem; padding: 0.55rem 0.7rem; }
+    .gamble-text { font-size: 1rem; }
+}
+
+@media (min-width: 481px) {
+    #options-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .launcher-container { padding: 2.5rem 1.5rem; }
+    .launcher-container h1 { font-size: 1.8rem; }
+    .game-container { padding: 0.75rem; }
+}
+
+@media (min-width: 769px) {
+    .game-container { padding: 1rem; }
+    #question-text { font-size: 1.05rem; }
+    .option-btn { font-size: 0.95rem; }
+    .launcher-container h1 { font-size: 2rem; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+    #image-reveal-container { aspect-ratio: 21 / 9; }
+    .question-panel { padding: 0.35rem 0.25rem; gap: 0.35rem; }
+    #question-text { font-size: 0.85rem; padding: 0.25rem 0; }
+    .option-btn { min-height: 40px; padding: 0.4rem 0.7rem; font-size: 0.82rem; }
+    #options-container { gap: 0.3rem; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ACCESSIBILITY
+   ═══════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .grid-tile.revealed { transition: none; }
+}
+
+@media (forced-colors: active) {
+    .option-btn { border: 2px solid ButtonText; }
+    .option-btn.correct { border-color: Highlight; }
+    .option-btn.wrong { border-color: LinkText; }
+    .grid-tile { background: ButtonText; }
+    .grid-tile.revealed { background: Canvas; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MATHJAX ALIGNMENT FIX  (v3 — definitive)
+
+   Root cause: MathJax SVG containers use TeX font metrics
+   that differ from the page's sans-serif font. This causes:
+   1. Font mismatch (serif vs sans-serif mid-sentence)
+   2. Vertical float (SVG height ≠ text line-height)
+
+   Fix strategy:
+   - Shrink SVG to match sans-serif x-height (scale in config)
+   - Pin SVG to text baseline with vertical-align nudge
+   - Collapse container line-height to 0 so it doesn't
+     expand the parent line box (eliminates floating)
+   - Force SVG fill to currentColor (matches text color)
+   - Hide assistive MML layer (ghost bar source)
+   ═══════════════════════════════════════════════════════ */
+
+/* Container: collapse line box, pin to baseline */
+mjx-container,
+mjx-container[jax="SVG"],
+mjx-container[jax="SVG"][display="true"] {
+    display: inline !important;
+    vertical-align: -0.12em !important;
+    line-height: 0 !important;
+    font-size: 1em !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0.05em !important;
+    outline: none !important;
+}
+
+/* SVG: match text color, no extra space */
+mjx-container svg {
+    display: inline !important;
+    overflow: visible !important;
+    background: transparent !important;
+    vertical-align: baseline !important;
+}
+
+mjx-container svg rect {
+    fill: currentColor !important;
+}
+
+mjx-container svg line,
+mjx-container svg path {
+    stroke: currentColor !important;
+}
+
+/* Kill assistive layer (source of ghost grey bars) */
+mjx-assistive-mml {
+    display: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* No background on interaction */
+mjx-container:focus,
+mjx-container:hover,
+mjx-container:active {
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Force MathJax \text{} to use page font, not TeX */
+mjx-container mjx-utext,
+mjx-container mjx-mtext {
+    font-family: inherit !important;
+}
