@@ -624,3 +624,40 @@ body {
     .grid-tile { background: ButtonText; }
     .grid-tile.revealed { background: Canvas; }
 }
+
+/* ─── MathJax Grey Highlight Fix ─── */
+mjx-container,
+mjx-container[jax="SVG"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: inline !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+mjx-container svg {
+    display: inline !important;
+    overflow: visible !important;
+}
+
+/* Hide MathJax assistive markup that can cause visual glitches */
+mjx-assistive-mml {
+    display: none !important;
+}
+
+/* Remove any grey highlight on MathJax focus/hover */
+mjx-container:focus,
+mjx-container:hover {
+    background: transparent !important;
+    outline: none !important;
+}
+
+/* Ensure option buttons don't get grey patches from MathJax */
+.option-btn mjx-container {
+    vertical-align: middle !important;
+}
+
+#question-text mjx-container {
+    vertical-align: baseline !important;
+}
