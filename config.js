@@ -1,35 +1,40 @@
-/* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — config.js
-   ✏️  THIS IS THE ONLY FILE YOU NEED TO EDIT
-   ═══════════════════════════════════════════════════════ */
+/* ============================================================
+   MYSTERY GRID REVEAL — config.js v3
+   ============================================================ */
 
 const CONFIG = {
-
-    // ─── GitHub Settings (REQUIRED) ───
-    GITHUB_USER: "WK-Enjie",
-    GITHUB_REPO: "brain-training-app",
+    // --- GitHub (used as fallback if relative path fails) ---
+    GITHUB_USER:   "WK-Enjie",
+    GITHUB_REPO:   "brain-training-app",
     GITHUB_BRANCH: "main",
 
-    // ─── Gameplay ───
-
-    // Shuffle answer options every time a question loads.
-    SHUFFLE_OPTIONS: true,
-
-    // How many correct answers to reveal the full image.
-    //   • Decimal (0–1) = percentage of total questions
-    //     Example: 0.75 → 18 out of 24, 9 out of 12
-    //   • Whole number (≥1) = exact count
-    //     Example: 18 → always 18 regardless of question count
-    //   • 1 or 1.0 = must get ALL correct (original behaviour)
-    WIN_THRESHOLD: 0.75,
-
-    // ─── Advanced (usually leave as-is) ───
+    // --- Paths ---
     QUESTIONS_PATH: "Questions",
-    INDEX_FILE: "index.json",
-    USE_LOCAL: false
-};
+    INDEX_FILE:     "index.json",
 
-// Auto-build the base URL — don't touch this.
-CONFIG.BASE_URL = CONFIG.USE_LOCAL
-    ? `./${CONFIG.QUESTIONS_PATH}`
-    : `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/${CONFIG.GITHUB_BRANCH}/${CONFIG.QUESTIONS_PATH}`;
+    // --- Gameplay ---
+    SHUFFLE_OPTIONS: true,
+    WIN_THRESHOLD:   0.75,     // 0–1 = percentage, or whole number = exact count
+
+    DELAY_CORRECT: 900,        // ms before next question after a right answer
+    DELAY_WRONG:   1600,       // ms before next question after a wrong answer
+
+    // --- Gamble ---
+    GAMBLE_ENABLED:  true,
+    GAMBLE_REWARD:   2,        // tiles gained on a correct bet
+    GAMBLE_PENALTY:  1,        // tiles lost on a wrong bet
+
+    // --- Debug ---
+    DEBUG: true,               // set false to silence console logs
+
+    // --- Folders searched if a file path in index.json is wrong ---
+    FALLBACK_FOLDERS: [
+        "primary/math",
+        "primary/science",
+        "secondary/lower/math",
+        "secondary/lower/science",
+        "secondary/upper/emath",
+        "secondary/upper/physics",
+        "secondary/upper/chemistry"
+    ]
+};
