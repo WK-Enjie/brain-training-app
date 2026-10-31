@@ -1,9 +1,8 @@
 /* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — style.css
+   MYSTERY GRID REVEAL — style.css  (v2)
    Mobile-first · 320px minimum · 100dvh safe area
    ═══════════════════════════════════════════════════════ */
 
-/* ─── Custom Properties ─── */
 :root {
     --color-primary: #4f46e5;
     --color-primary-hover: #4338ca;
@@ -29,7 +28,6 @@
     --transition-med: 0.35s ease;
 }
 
-/* ─── Reset & Base ─── */
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -51,7 +49,6 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* ─── Screen Toggle ─── */
 .screen {
     display: none;
     min-height: 100dvh;
@@ -61,7 +58,6 @@ body {
     flex-direction: column;
 }
 
-/* ─── Accessibility Utilities ─── */
 .sr-only {
     position: absolute;
     width: 1px; height: 1px;
@@ -197,7 +193,6 @@ body {
     border: 2px solid var(--color-gamble-gold);
 }
 
-/* ─── Header ─── */
 .game-header {
     display: flex;
     align-items: center;
@@ -232,7 +227,6 @@ body {
     min-width: 0;
 }
 
-/* ─── Image Reveal Container ─── */
 #image-reveal-container {
     position: relative;
     width: 100%;
@@ -250,7 +244,6 @@ body {
     display: block;
 }
 
-/* ─── Grid Overlay ─── */
 #grid-overlay {
     position: absolute;
     inset: 0;
@@ -299,21 +292,15 @@ body {
     min-height: 0;
 }
 
+/* Fixed line-height prevents layout shift when MathJax renders */
 #question-text {
     font-size: 0.95rem;
-    line-height: 1.55;
+    line-height: 1.7;
     font-weight: 500;
     padding: 0.5rem 0;
+    min-height: 2.5em;
 }
 
-#question-text mjx-container,
-.option-btn mjx-container {
-    overflow-x: auto;
-    max-width: 100%;
-    display: inline-block !important;
-}
-
-/* ─── Options ─── */
 #options-container {
     display: flex;
     flex-direction: column;
@@ -331,7 +318,7 @@ body {
     border: 2px solid var(--color-border);
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
-    line-height: 1.4;
+    line-height: 1.7;
     text-align: left;
     cursor: pointer;
     transition: border-color var(--transition-fast),
@@ -383,7 +370,6 @@ body {
     color: #fff;
 }
 
-/* ─── Progress ─── */
 #progress-tracker {
     font-size: 0.78rem;
     color: var(--color-text-muted);
@@ -501,9 +487,7 @@ body {
     padding: 2rem 1rem;
     text-align: center;
 }
-.end-game-panel h2 {
-    font-size: 1.5rem;
-}
+.end-game-panel h2 { font-size: 1.5rem; }
 .end-game-panel p {
     color: var(--color-text-muted);
     font-size: 0.95rem;
@@ -564,7 +548,6 @@ body {
 /* ═══════════════════════════════════════════════════════
    RESPONSIVE BREAKPOINTS
    ═══════════════════════════════════════════════════════ */
-
 @media (max-width: 374px) {
     .launcher-container h1 { font-size: 1.3rem; }
     #question-text { font-size: 0.88rem; }
@@ -619,25 +602,31 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
-   MATHJAX GREY BAR FIX
-   Kills ghost backgrounds, borders, and assistive layers
-   that MathJax SVG containers create in some browsers.
+   MATHJAX STABILITY FIX  (v2)
+   - Forces inline display to prevent vertical bouncing
+   - Locks vertical alignment to text baseline
+   - Kills ghost backgrounds, borders, assistive layers
+   - Hides MathJax right-click menu container
    ═══════════════════════════════════════════════════════ */
 mjx-container,
 mjx-container[jax="SVG"],
 mjx-container[jax="SVG"][display="true"] {
+    display: inline !important;
+    vertical-align: baseline !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
-    margin: 0 1px !important;
+    margin: 0 !important;
     outline: none !important;
+    line-height: inherit !important;
 }
 
 mjx-container svg {
     display: inline !important;
     overflow: visible !important;
     background: transparent !important;
+    vertical-align: baseline !important;
 }
 
 mjx-container svg rect {
@@ -666,8 +655,8 @@ mjx-container:active {
     box-shadow: none !important;
 }
 
-.option-btn mjx-container,
-#question-text mjx-container {
-    background: transparent !important;
-    vertical-align: baseline !important;
+/* Prevent MathJax from overriding page font for \text{} commands */
+mjx-container mjx-utext,
+mjx-container mjx-mtext {
+    font-family: inherit !important;
 }
