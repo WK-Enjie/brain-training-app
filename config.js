@@ -1,33 +1,27 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — config.js v3
+   MYSTERY GRID REVEAL — config.js
    ============================================================ */
 
 const CONFIG = {
-    // --- GitHub (used as fallback if relative path fails) ---
     GITHUB_USER:   "WK-Enjie",
     GITHUB_REPO:   "brain-training-app",
     GITHUB_BRANCH: "main",
 
-    // --- Paths ---
     QUESTIONS_PATH: "Questions",
     INDEX_FILE:     "index.json",
 
-    // --- Gameplay ---
     SHUFFLE_OPTIONS: true,
-    WIN_THRESHOLD:   0.75,     // 0–1 = percentage, or whole number = exact count
+    WIN_THRESHOLD:   0.75,
 
-    DELAY_CORRECT: 900,        // ms before next question after a right answer
-    DELAY_WRONG:   1600,       // ms before next question after a wrong answer
+    DELAY_CORRECT: 900,
+    DELAY_WRONG:   1600,
 
-    // --- Gamble ---
-    GAMBLE_ENABLED:  true,
-    GAMBLE_REWARD:   2,        // tiles gained on a correct bet
-    GAMBLE_PENALTY:  1,        // tiles lost on a wrong bet
+    GAMBLE_ENABLED: true,
+    GAMBLE_REWARD:  2,
+    GAMBLE_PENALTY: 1,
 
-    // --- Debug ---
-    DEBUG: true,               // set false to silence console logs
+    DEBUG: true,
 
-    // --- Folders searched if a file path in index.json is wrong ---
     FALLBACK_FOLDERS: [
         "primary/math",
         "primary/science",
@@ -36,5 +30,27 @@ const CONFIG = {
         "secondary/upper/emath",
         "secondary/upper/physics",
         "secondary/upper/chemistry"
-    ]
+    ],
+
+    /* ─────────────────────────────────────────────────────────
+       DEFAULT_SCHEMA
+       Lists every possible field name the engine should accept.
+       Checked in order — first match wins.
+       You can override per-worksheet by adding a "schema" block
+       to the worksheet JSON itself.
+       ───────────────────────────────────────────────────────── */
+    DEFAULT_SCHEMA: {
+        worksheet: {
+            title:    ["title", "name"],
+            image:    ["revealImage", "image", "imageUrl", "img", "picture"],
+            questions:["questions", "items", "quiz", "qs"]
+        },
+        question: {
+            text:    ["qText", "question", "text", "q", "prompt", "stem", "body"],
+            options: ["options", "choices", "answers", "opts", "alternatives"],
+            answer:  ["correctIndex", "answerIndex", "answer", "correct",
+                      "correctAnswer", "correct_answer", "correctOption",
+                      "correct_index", "ans", "solution", "key"]
+        }
+    }
 };
