@@ -2,10 +2,10 @@
     {
         "title": "Algebra: Expressions, Fractions & Equations",
         "icon": "🔤",
-        "subject": "Upper Sec E-Maths",
+        "subject": "Lower Sec E-Maths",
         "topic": "Algebra",
         "questionCount": 24,
-        "file": "secondary/upper/emath/algebra-expressions-01.json"
+        "file": "secondary/lower/math/algebra-expressions-01.json"
     },
     {
         "title": "Estimation, HCF/LCM & Bounds",
