@@ -1,0 +1,18 @@
+[
+    {
+        "title": "Algebra: Expressions, Fractions & Equations",
+        "icon": "🔤",
+        "subject": "Upper Sec E-Maths",
+        "topic": "Algebra",
+        "questionCount": 24,
+        "file": "secondary/upper/emath/algebra-expressions-01.json"
+    },
+    {
+        "title": "Estimation, HCF/LCM & Bounds",
+        "icon": "📏",
+        "subject": "Upper Sec E-Maths",
+        "topic": "Numbers",
+        "questionCount": 24,
+        "file": "secondary/upper/emath/estimation-hcflcm-bounds-01.json"
+    }
+]
