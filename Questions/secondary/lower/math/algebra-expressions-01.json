@@ -1,45 +1,125 @@
 {
     "worksheetTitle": "Algebra: Basic Expressions, Simplification & Simple Equations",
-    "revealImageUrl": "hhttps://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1200",
+    "revealImageUrl": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1200",
     "questions": [
         {
             "qText": "Expand and simplify: 3(2x + 4) - 2(x - 3)",
-            "options": ["4x + 18", "4x + 6", "4x - 18", "8x + 18"],
-            "correctIndex": 0
-        },
-        {
-            "qText": "Simplify: 5a - 2(3a - 4b) + 7b",
-            "options": ["11a + 15b", "a + 15b", "-a + 15b", "-a - b"],
+            "options": ["4x - 18", "4x + 6", "4x + 18", "8x + 18"],
             "correctIndex": 2
         },
         {
+            "qText": "Simplify: 5a - 2(3a - 4b) + 7b",
+            "options": ["-a - b", "-a + 15b", "a + 15b", "11a + 15b"],
+            "correctIndex": 1
+        },
+        {
             "qText": "Solve for x: 4(2x - 1) = 3(x + 2)",
-            "options": ["x = 1", "x = 3", "x = 2", "x = 4"],
+            "options": ["x = 3", "x = 1", "x = 2", "x = 4"],
             "correctIndex": 2
         },
         {
             "qText": "A rectangle has length (2x + 3) cm and width (x + 1) cm. If the perimeter is 32 cm, find the value of x.",
-            "options": ["x = 4", "x = 6", "x = 3", "x = 5"],
-            "correctIndex": 0
+            "options": ["x = 5", "x = 4", "x = 3", "x = 6"],
+            "correctIndex": 1
         },
         {
             "qText": "Simplify the algebraic fraction: (5x + 2)/3 - (2x - 1)/3",
-            "options": ["3x + 3", "3x + 1", "x + 1", "x + 3"],
+            "options": ["3x + 1", "x + 3", "x + 1", "3x + 3"],
             "correctIndex": 2
         },
         {
             "qText": "Expand and simplify: x(3x - 4) + 2x(x + 5)",
-            "options": ["5x^2 + 14x", "x^2 + 6x", "5x^2 - 6x", "5x^2 + 6x"],
-            "correctIndex": 3
+            "options": ["5x^2 + 14x", "5x^2 + 6x", "x^2 + 6x", "5x^2 - 6x"],
+            "correctIndex": 1
         },
         {
             "qText": "John has $y. Mary has $15 more than John. Together they have $65. How much money does Mary have?",
-            "options": ["$35", "$25", "$40", "$50"],
-            "correctIndex": 2
+            "options": ["$25", "$40", "$50", "$35"],
+            "correctIndex": 1
         },
         {
             "qText": "Solve for k: 7 - 2(k + 3) = 5k - 6",
-            "options": ["k = 2", "k = -1", "k = 0", "k = 1"],
+            "options": ["k = 0", "k = 2", "k = -1", "k = 1"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Expand and simplify: -3(2y - 5) - (7 - 4y)",
+            "options": ["-10y + 8", "-2y - 8", "2y + 8", "-2y + 8"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Simplify: 9 - 4(3k - 2) + 7k",
+            "options": ["17 + 5k", "17 - 19k", "17 - 5k", "1 - 5k"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Solve for x: 3(x - 4) = 2(x + 1)",
+            "options": ["x = 12", "x = 14", "x = 16", "x = 10"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "The sum of three consecutive integers is 42. Find the largest of the three integers.",
+            "options": ["15", "13", "14", "16"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Simplify the algebraic fraction: (4m + 5)/2 + (2m - 3)/2",
+            "options": ["3m - 1", "3m + 1", "m + 1", "6m + 2"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Expand and simplify: 2p(3p - 4) - p(p + 2)",
+            "options": ["7p^2 - 6p", "5p^2 - 10p", "5p^2 + 10p", "6p^2 - 10p"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Solve for x: 5x - 3(2 - x) = 10",
+            "options": ["x = 3", "x = 1", "x = 2", "x = 4"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A number is multiplied by 4, then 7 is added. The result is 31. Find the number.",
+            "options": ["5", "8", "7", "6"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Simplify: 8x - 3(x - 2y) + 4y",
+            "options": ["5x + 10y", "11x + 10y", "5x - 2y", "11x + 2y"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Solve for x: (3x + 2)/4 = 5",
+            "options": ["x = 10", "x = 6", "x = 8", "x = 4"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Expand and simplify: (x + 3)(x + 4) - x(x + 2)",
+            "options": ["x^2 + 5x + 12", "5x - 12", "7x + 12", "5x + 12"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "A father is 3 times as old as his son now. In 10 years, he will be twice as old. Find the father's present age.",
+            "options": ["35 years", "40 years", "30 years", "20 years"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Simplify: 7/(2a) + 3/(2a)",
+            "options": ["5/(2a)", "5/a", "10/(2a^2)", "10/a"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Solve for x: 2(3x - 1) - 3(x + 4) = -11",
+            "options": ["x = 2", "x = 1", "x = 0", "x = -1"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "A student bought x stamps at $2 each and (x + 4) postcards at $3 each. She paid $32 in total. Find the total number of items bought.",
+            "options": ["16", "8", "12", "10"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Expand and simplify: 4(2a - 3b) - 3(a - 4b)",
+            "options": ["5a + 12b", "5a - 24b", "11a", "5a"],
             "correctIndex": 3
         }
     ]
