@@ -1,11 +1,12 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — script.js v4.6
-   Fix: showScreen uses inline display (no CSS class dependency)
+   MYSTERY GRID REVEAL — script.js v5.0
+   Rewritten to match actual index.html DOM structure
    ============================================================ */
 
 // ===== STATE =====
 const STATE = {
     worksheetData: null,
+    worksheetTitle: '',
     currentQuestion: 0,
     correctCount: 0,
     revealedTiles: new Set(),
@@ -13,45 +14,59 @@ const STATE = {
     isAnswered: false,
     currentFilePath: '',
     gambleActive: false,
-    _lastFilePath: ''
+    _lastFilePath: '',
+    _indexData: null
 };
 
 // ===== DOM HELPERS =====
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
-/* ★ v4.6: uses inline style so it works even if .hidden CSS is missing */
 function showScreen(id) {
-    ['launcher-screen', 'game-screen', 'end-screen'].forEach(s => {
-        const el = document.getElementById(s);
-        if (!el) return;
-        if (s === id) {
-            el.style.display = '';
-            el.removeAttribute('aria-hidden');
-        } else {
-            el.style.display = 'none';
-            el.setAttribute('aria-hidden', 'true');
-        }
+    $$('.screen').forEach(s => {
+        s.classList.toggle('active', s.id === id);
     });
 }
 
 // ===== INIT =====
 async function init() {
+    // Check for retry from sessionStorage
+    const retry = sessionStorage.getItem('mgr_retry');
+    if (retry) {
+        sessionStorage.removeItem('mgr_retry');
+        // Need to load index first to get title, then start
+        await loadIndex();
+        startWorksheet(retry);
+        return;
+    }
+
+    await loadIndex();
+    showScreen('launcher-screen');
+
+    // Back button in game header
+    const backBtn = $('#back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            showScreen('launcher-screen');
+        });
+    }
+}
+
+async function loadIndex() {
     try {
         const url = `${CONFIG.BASE_URL}/${CONFIG.INDEX_FILE}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const index = await res.json();
-        buildLauncher(index);
+        STATE._indexData = await res.json();
+        buildLauncher(STATE._indexData);
     } catch (err) {
         console.error('Failed to load index:', err);
-        const launcher = $('#launcher-screen');
-        if (launcher) {
-            launcher.innerHTML =
+        const list = $('#worksheet-list');
+        if (list) {
+            list.innerHTML =
                 '<p class="error">Failed to load worksheets. Check config.js and your GitHub repo.</p>';
         }
     }
-    showScreen('launcher-screen');
 }
 
 function buildLauncher(index) {
@@ -67,7 +82,10 @@ function buildLauncher(index) {
             <p>${ws.subject} · ${ws.topic}</p>
             <span class="ws-count">${ws.questionCount} Qs</span>
         `;
-        card.addEventListener('click', () => startWorksheet(ws.file));
+        card.addEventListener('click', () => {
+            STATE.worksheetTitle = ws.title;
+            startWorksheet(ws.file);
+        });
         container.appendChild(card);
     });
 }
@@ -81,11 +99,17 @@ async function startWorksheet(filePath) {
     STATE.isAnswered = false;
     STATE.gambleActive = false;
 
+    // Hide end overlay if present
     const overlay = document.getElementById('end-overlay');
     if (overlay) overlay.style.display = 'none';
 
     showScreen('game-screen');
 
+    // Set title
+    const titleEl = $('#worksheet-title');
+    if (titleEl) titleEl.textContent = STATE.worksheetTitle || 'Mystery Grid';
+
+    // Fetch worksheet data
     if (!STATE.worksheetData || STATE._lastFilePath !== filePath) {
         try {
             const url = `${CONFIG.BASE_URL}/${filePath}`;
@@ -95,7 +119,7 @@ async function startWorksheet(filePath) {
             STATE._lastFilePath = filePath;
         } catch (err) {
             console.error('Failed to load worksheet:', err);
-            alert('Failed to load worksheet. Check your connection and file path.');
+            alert('Failed to load worksheet.');
             showScreen('launcher-screen');
             return;
         }
@@ -103,16 +127,26 @@ async function startWorksheet(filePath) {
 
     STATE.totalTiles = STATE.worksheetData.questions.length;
     setupGrid(STATE.worksheetData.revealImage);
-    updateScore();
+    updateProgress();
     showQuestion(0);
 }
 
 // ===== GRID =====
 function setupGrid(imageUrl) {
-    const grid = $('#grid');
+    // Set the reveal image
+    const img = $('#reveal-image');
+    if (img) img.src = imageUrl;
+
+    // Build tile grid inside the overlay
+    const grid = $('#grid-overlay');
     if (!grid) return;
     grid.innerHTML = '';
-    grid.style.backgroundImage = `url(${imageUrl})`;
+
+    // Calculate grid dimensions
+    const cols = Math.ceil(Math.sqrt(STATE.totalTiles * 1.5));
+    const rows = Math.ceil(STATE.totalTiles / cols);
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
 
     for (let i = 0; i < STATE.totalTiles; i++) {
         const tile = document.createElement('div');
@@ -145,7 +179,7 @@ function removeTile() {
 
 // ===== GLITCH PEEK =====
 function glitchPeek() {
-    const grid = $('#grid');
+    const grid = $('#grid-overlay');
     if (!grid) return;
     grid.classList.add('glitch-peek');
     setTimeout(() => grid.classList.remove('glitch-peek'), 600);
@@ -156,18 +190,18 @@ function gamblePrompt() {
     if (STATE.revealedTiles.size === 0 ||
         STATE.revealedTiles.size >= STATE.totalTiles) return;
 
-    const qArea = $('#question-area');
-    if (!qArea) return;
+    const qText = $('#question-text');
+    if (!qText) return;
 
     const gambleDiv = document.createElement('div');
     gambleDiv.className = 'gamble-prompt';
     gambleDiv.innerHTML = `
         <p>🎰 <strong>Bet a tile?</strong>
-           Right → reveal 2 tiles! Wrong → lose 1 tile.</p>
+           Right → reveal 2! Wrong → lose 1.</p>
         <button class="gamble-yes">Yes, bet!</button>
         <button class="gamble-no">No thanks</button>
     `;
-    qArea.prepend(gambleDiv);
+    qText.before(gambleDiv);
 
     gambleDiv.querySelector('.gamble-yes').addEventListener('click', () => {
         STATE.gambleActive = true;
@@ -242,7 +276,6 @@ function wrapMathRuns(text) {
                 if (MATH_CHARS.test(text[j])) { j++; }
                 else { break; }
             }
-
             const run = text.slice(i, j);
             result += isPureExpression(run) ? `\\(${run}\\)` : run;
             i = j;
@@ -261,6 +294,10 @@ function wrapStandaloneVars(text) {
         parts[i] = parts[i].replace(/\b([xyz])\b/g, '\\($1\\)');
     }
     return parts.join('');
+}
+
+function processMath(text) {
+    return wrapStandaloneVars(wrapMathRuns(text));
 }
 
 async function renderMath(el) {
@@ -287,38 +324,34 @@ function showQuestion(index) {
     STATE.gambleActive = false;
 
     const q = STATE.worksheetData.questions[index];
-    const qArea = $('#question-area');
-    if (!qArea) return;
 
-    const qNum = document.createElement('div');
-    qNum.className = 'q-number';
-    qNum.textContent = `Q${index + 1} of ${STATE.totalTiles}`;
+    // Question text
+    const qText = $('#question-text');
+    if (qText) {
+        qText.innerHTML = processMath(q.question);
+    }
 
-    const qText = document.createElement('div');
-    qText.className = 'q-text';
-    qText.innerHTML = wrapStandaloneVars(wrapMathRuns(q.question));
+    // Options
+    const optContainer = $('#options-container');
+    if (optContainer) {
+        optContainer.innerHTML = '';
+        let options = [...q.options];
+        if (CONFIG.SHUFFLE_OPTIONS) options = shuffleArray(options);
 
-    const optionsDiv = document.createElement('div');
-    optionsDiv.className = 'options';
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.dataset.value = opt;
+            btn.innerHTML = processMath(opt);
+            btn.addEventListener('click', () => checkAnswer(opt, q.answer, optContainer));
+            optContainer.appendChild(btn);
+        });
+    }
 
-    let options = [...q.options];
-    if (CONFIG.SHUFFLE_OPTIONS) options = shuffleArray(options);
+    // Render MathJax in the question panel
+    const panel = $('.question-panel');
+    if (panel) renderMath(panel);
 
-    options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'opt-btn';
-        btn.dataset.value = opt;
-        btn.innerHTML = wrapStandaloneVars(wrapMathRuns(opt));
-        btn.addEventListener('click', () => checkAnswer(opt, q.answer, optionsDiv));
-        optionsDiv.appendChild(btn);
-    });
-
-    qArea.innerHTML = '';
-    qArea.appendChild(qNum);
-    qArea.appendChild(qText);
-    qArea.appendChild(optionsDiv);
-
-    renderMath(qArea);
     updateProgress();
 
     if (STATE.revealedTiles.size > 0 &&
@@ -328,11 +361,11 @@ function showQuestion(index) {
 }
 
 // ===== CHECK ANSWER =====
-function checkAnswer(selected, correct, optionsDiv) {
+function checkAnswer(selected, correct, optContainer) {
     if (STATE.isAnswered) return;
     STATE.isAnswered = true;
 
-    const buttons = optionsDiv.querySelectorAll('.opt-btn');
+    const buttons = optContainer.querySelectorAll('.opt-btn');
     const isCorrect = selected === correct;
 
     buttons.forEach(btn => {
@@ -343,7 +376,6 @@ function checkAnswer(selected, correct, optionsDiv) {
 
     if (isCorrect) {
         STATE.correctCount++;
-        updateScore();
         if (STATE.gambleActive) {
             revealRandomTile();
             revealRandomTile();
@@ -358,6 +390,8 @@ function checkAnswer(selected, correct, optionsDiv) {
         }
         glitchPeek();
     }
+
+    updateProgress();
 
     setTimeout(() => {
         showQuestion(STATE.currentQuestion + 1);
@@ -395,7 +429,7 @@ function cascadeRevealAndEnd(didWin) {
     setTimeout(() => endGame(true), unrevealed.length * 80 + 600);
 }
 
-// ===== END GAME (floating overlay) =====
+// ===== END GAME (dynamic overlay) =====
 function endGame(didWin) {
     const total     = STATE.totalTiles;
     const correct   = STATE.correctCount;
@@ -427,7 +461,7 @@ function endGame(didWin) {
             <p>${message}</p>
             <div class="end-buttons">
                 ${!didWin ? '<button class="end-btn retry" id="retry-btn">Try Again</button>' : ''}
-                <button class="end-btn" id="back-btn">Choose Another</button>
+                <button class="end-btn" id="end-back-btn">Choose Another</button>
             </div>
         </div>
     `;
@@ -436,12 +470,12 @@ function endGame(didWin) {
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.addEventListener('click', () => {
-            overlay.style.display = 'none';
-            startWorksheet(STATE.currentFilePath);
+            sessionStorage.setItem('mgr_retry', STATE.currentFilePath);
+            location.reload();
         });
     }
 
-    document.getElementById('back-btn').addEventListener('click', () => {
+    document.getElementById('end-back-btn').addEventListener('click', () => {
         overlay.style.display = 'none';
         STATE.worksheetData = null;
         STATE._lastFilePath = '';
@@ -456,6 +490,14 @@ function getWinTarget() {
     return Math.ceil(STATE.totalTiles * t);
 }
 
+// ===== PROGRESS =====
+function updateProgress() {
+    const el = $('#progress-tracker');
+    if (el) {
+        el.textContent = `Q${STATE.currentQuestion + 1}/${STATE.totalTiles}  ·  Score: ${STATE.correctCount}`;
+    }
+}
+
 // ===== UTILITIES =====
 function shuffleArray(arr) {
     const a = [...arr];
@@ -464,19 +506,6 @@ function shuffleArray(arr) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-}
-
-function updateScore() {
-    const el = $('#score-display');
-    if (el) el.textContent = `${STATE.correctCount}/${STATE.totalTiles}`;
-}
-
-function updateProgress() {
-    const el = $('#progress-bar');
-    if (el) {
-        const pct = (STATE.currentQuestion / STATE.totalTiles) * 100;
-        el.style.width = `${pct}%`;
-    }
 }
 
 function showToast(msg) {
