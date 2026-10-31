@@ -6,7 +6,7 @@
     <title>Mystery Grid Reveal</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- MathJax 3 Configuration (MUST come before the CDN script) -->
+    <!-- MathJax 3 Configuration -->
     <script>
         window.MathJax = {
             tex: {
@@ -14,9 +14,19 @@
                 displayMath: [['\\[', '\\]']],
                 processEscapes: true
             },
-            svg: { fontCache: 'global' },
-            options: { enableMenu: false },
-            startup: { typeset: false }
+            svg: {
+                fontCache: 'global',
+                scale: 0.88
+            },
+            options: {
+                enableMenu: false,
+                renderActions: {
+                    addMenu: [0, '', '']
+                }
+            },
+            startup: {
+                typeset: false
+            }
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
