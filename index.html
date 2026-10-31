@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mystery Grid Reveal</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- MathJax 3 Configuration (MUST come before the CDN script) -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']],
+                processEscapes: true
+            },
+            svg: { fontCache: 'global' },
+            options: { enableMenu: false },
+            startup: { typeset: false }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head>
+<body>
+
+    <!-- ═══════════════ LAUNCHER SCREEN ═══════════════ -->
+    <section id="launcher-screen" class="screen active">
+        <div class="launcher-container">
+            <h1>🔍 Mystery Grid Reveal</h1>
+            <p class="tagline">Solve questions. Reveal the hidden image.</p>
+            <div id="worksheet-list" aria-label="Available worksheets">
+                <p class="loading-msg">Loading worksheets…</p>
+            </div>
+            <p class="footer-note">Tap a worksheet to begin.</p>
+        </div>
+    </section>
+
+    <!-- ═══════════════ GAME SCREEN ═══════════════ -->
+    <section id="game-screen" class="screen">
+        <div class="game-container">
+
+            <header class="game-header">
+                <button id="back-btn" aria-label="Back to worksheet list">← Back</button>
+                <h2 id="worksheet-title"></h2>
+            </header>
+
+            <div id="image-reveal-container">
+                <img id="reveal-image" src="" alt="Hidden image to reveal" />
+                <div id="grid-overlay" role="img" aria-label="Cover grid hiding the image"></div>
+            </div>
+
+            <div class="question-panel">
+                <p id="question-text" aria-live="polite"></p>
+                <div id="options-container" role="group" aria-label="Answer options"></div>
+                <p id="progress-tracker"></p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Scripts: config FIRST, then engine -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
