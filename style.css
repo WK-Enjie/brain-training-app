@@ -722,6 +722,41 @@ mjx-container mjx-mtext {
    END-SCREEN OVERLAY  (v4.4)
    Sits on top of the game; game DOM preserved for Try Again
    ============================================================ */
+
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.end-btn {
+    min-height: 48px;
+    padding: 0.7rem 1.4rem;
+    border: none;
+    border-radius: var(--radius-sm, 8px);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.end-btn.retry {
+    background: var(--color-gamble-gold, #f59e0b);
+    color: #fff;
+}
+.end-btn.retry:hover {
+    background: #d97706;
+}
+
+.end-btn:not(.retry) {
+    background: var(--color-primary, #6366f1);
+    color: #fff;
+}
+.end-btn:not(.retry):hover {
+    background: var(--color-primary-hover, #4f46e5);
+}
+
+/* ============================================================
+   END-SCREEN OVERLAY  (v4.5)
+   ============================================================ */
 #end-overlay {
     display: none;
     position: fixed;
@@ -731,6 +766,11 @@ mjx-container mjx-mtext {
     justify-content: center;
     align-items: center;
     padding: 1rem;
+    pointer-events: none;          /* ★ can't block clicks when hidden */
+}
+
+#end-overlay[style*="flex"] {
+    pointer-events: auto;          /* only clickable when visible */
 }
 
 .end-card {
@@ -778,9 +818,7 @@ mjx-container mjx-mtext {
     background: var(--color-gamble-gold, #f59e0b);
     color: #fff;
 }
-.end-btn.retry:hover {
-    background: #d97706;
-}
+.end-btn.retry:hover { background: #d97706; }
 
 .end-btn:not(.retry) {
     background: var(--color-primary, #6366f1);
