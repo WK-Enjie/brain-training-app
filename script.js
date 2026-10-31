@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
-   Mystery Grid Reveal — Game Engine v7.2
-   Balanced-bracket fraction parser · Fixed gamble guards
+   Mystery Grid Reveal — Game Engine v7.3
+   Fixed vault placeholder · Balanced-bracket fractions
    ═══════════════════════════════════════════════════════ */
 
 const $  = s => document.querySelector(s);
@@ -29,9 +29,9 @@ const STATE = {
 
 /**
  * Balanced-bracket fraction converter.
- * Finds each '/' and extracts numerator (look-back) and
- * denominator (look-forward) using proper bracket matching.
- * Handles nested parens like 5/(2(x-3)^2) and (a)/((b)(c)).
+ * Walks character-by-character, finds each '/',
+ * extracts numerator (look-back) and denominator (look-forward)
+ * using proper parenthesis depth counting.
  */
 function convertFractions(t) {
     if (!t || !t.includes('/')) return t;
@@ -74,7 +74,7 @@ function convertFractions(t) {
                 }
                 denEnd = j;
                 den = t.substring(i + 1, denEnd);
-                // Grab trailing power like ^2 or ^{2}
+                // Grab trailing power: ^2 or ^{2}
                 if (denEnd < t.length && t[denEnd] === '^') {
                     let k = denEnd + 1;
                     if (k < t.length && t[k] === '{') {
@@ -164,28 +164,30 @@ function formatOption(raw) {
 /**
  * Format a full question text (mixed English + math).
  * Pipeline: Stash → Convert → Wrap → Restore
+ *
+ * Uses § as vault marker (safe Unicode, survives all string ops).
  */
 function formatQuestionText(raw) {
     if (!raw || typeof raw !== 'string') return '';
     let t = raw;
     const vault = [];
-    const save = m => { vault.push(m); return '\x00V' + (vault.length - 1) + '\x00'; };
+    const save = m => { vault.push(m); return '§V' + (vault.length - 1) + '§'; };
 
     /* ── Phase 1: Stash non-math tokens ── */
 
-    // Currency
+    // Currency: $21.80, $1.40, $50
     t = t.replace(/\$\d+(?:\.\d+)?/g, save);
 
-    // Number + unit combos
+    // Number + unit combos: 58 cm, 60 km/h, 100 cm^2, 40 minutes, 12 years, 4 marks
     t = t.replace(
         /\d+\s*(?:km\/h|cm\^2|cm²|m\^2|m²|cm|mm|m|km|kg|g|minutes?|mins?|hours?|hrs?|seconds?|secs?|years?|yrs?|marks?|questions?|items?|pens?|notebooks?)/gi,
         save
     );
 
-    // Hyphenated
+    // Hyphenated: 30-question
     t = t.replace(/\d+-(?:question|mark|item|year|minute|hour)/gi, save);
 
-    // Unit after closing paren: ") cm"
+    // Unit after closing paren: ") cm" in "(3x + 1) cm"
     t = t.replace(/(\))\s+(cm|mm|m|km|kg|g)\b/gi, (_, p, u) => p + save(' ' + u));
 
     /* ── Phase 2: Convert notation ── */
@@ -193,6 +195,7 @@ function formatQuestionText(raw) {
 
     /* ── Phase 3: Wrap math zones ── */
 
+    // Pattern A — instruction colon: "Simplify: 7a - 3[2b - ...]"
     const colonIdx = t.lastIndexOf(':');
     if (colonIdx > 5 && colonIdx < t.length - 3) {
         const prefix   = t.substring(0, colonIdx + 1);
@@ -201,25 +204,27 @@ function formatQuestionText(raw) {
             t = prefix + ' \\(' + mathPart + '\\)';
         }
     } else {
-        // Parenthesised expressions with variables
+        // Pattern B — word problem: inline parenthesised expressions with variables
         t = t.replace(/(\([^)]*[a-z][^)]*\))/gi, m => {
             if (m.includes('\\(')) return m;
             return '\\(' + m + '\\)';
         });
-        // Digit+variable sequences
+        // Pattern B2 — digit+variable sequences: "3x + 1"
         t = t.replace(/((?:\d+[a-z]|[a-z]\d)(?:\s*[+\-*/=]\s*(?:\d+[a-z]?|\d+))*)/gi, m => {
             if (m.includes('\\(')) return m;
             return '\\(' + m + '\\)';
         });
     }
 
-    /* ── Phase 4: Standalone variables ── */
+    /* ── Phase 4: Wrap standalone variables ── */
     t = t.replace(/(?<![a-zA-Z\\])([xyzabpkm])(?![a-zA-Z{}])/gi, (m, v, offset, str) => {
+        // Skip if already inside \( ... \)
         const before = str.substring(Math.max(0, offset - 200), offset);
         const opens  = (before.match(/\\\(/g) || []).length;
         const closes = (before.match(/\\\)/g) || []).length;
         if (opens > closes) return m;
 
+        // Don't wrap the article "a" in common English contexts
         if (v.toLowerCase() === 'a') {
             const ctx = str.substring(Math.max(0, offset - 6), offset).trim().toLowerCase();
             if (/^(as|is|in|at|to|of|by|or|an|and|was|has|had|per|that|than)$/.test(ctx)) return m;
@@ -228,7 +233,7 @@ function formatQuestionText(raw) {
     });
 
     /* ── Phase 5: Restore vault ── */
-    t = t.replace(/\x00V(\d+)\x00/g, (_, i) => vault[parseInt(i)]);
+    t = t.replace(/§V(\d+)§/g, (_, i) => vault[parseInt(i)]);
 
     return t;
 }
@@ -642,139 +647,4 @@ function showQuestion() {
     /* Options */
     if (optsEl) {
         optsEl.innerHTML = '';
-        const indices  = q.options.map((_, i) => i);
-        const shuffled = CONFIG.SHUFFLE_OPTIONS ? shuffleArray(indices) : indices;
-
-        shuffled.forEach(origIdx => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-            btn.innerHTML = formatOption(q.options[origIdx]);
-            btn.dataset.origIndex = origIdx;
-            btn.addEventListener('click', () => handleAnswer(origIdx, btn));
-            optsEl.appendChild(btn);
-        });
-
-        typesetMath(optsEl);
-    }
-}
-
-function handleAnswer(chosenIdx, btnEl) {
-    if (STATE.locked) return;
-    STATE.locked = true;
-
-    const q       = STATE.questions[STATE.currentIndex];
-    const correct = chosenIdx === q.correctIndex;
-    const allBtns = $$('.option-btn');
-
-    allBtns.forEach(b => {
-        b.disabled = true;
-        if (parseInt(b.dataset.origIndex) === q.correctIndex) b.classList.add('correct');
-    });
-
-    if (correct) {
-        btnEl.classList.add('correct');
-        STATE.score++;
-
-        let tilesGained = 0;
-        if (removeRandomTile()) tilesGained++;
-
-        if (STATE.gambleActive) {
-            for (let i = 0; i < CONFIG.GAMBLE_REWARD; i++) {
-                if (removeRandomTile()) tilesGained++;
-            }
-            showToast('🎲 Gamble won! +' + tilesGained + ' tiles!');
-        } else {
-            showToast('✅ Correct!');
-        }
-
-        addTimer(() => { STATE.currentIndex++; showQuestion(); }, CONFIG.DELAY_CORRECT);
-    } else {
-        btnEl.classList.add('wrong');
-
-        // Glitch-peek a random covered tile
-        const covered = getCoveredTiles();
-        if (covered.length > 0) {
-            const peek = covered[Math.floor(Math.random() * covered.length)];
-            peek.classList.add('glitch');
-            addTimer(() => peek.classList.remove('glitch'), 800);
-        }
-
-        if (STATE.gambleActive) {
-            let tilesLost = 0;
-            for (let i = 0; i < CONFIG.GAMBLE_PENALTY; i++) {
-                if (restoreRandomTile()) tilesLost++;
-            }
-            showToast('🎲 Gamble lost! −' + tilesLost + ' tile' + (tilesLost !== 1 ? 's' : ''));
-        } else {
-            showToast('❌ Wrong!');
-        }
-
-        addTimer(() => { STATE.currentIndex++; showQuestion(); }, CONFIG.DELAY_WRONG);
-    }
-}
-
-/* ══════════════════════════════════════════════
-   END GAME
-   ══════════════════════════════════════════════ */
-
-function endGame() {
-    clearTimers();
-    const needed = Math.ceil(STATE.total * CONFIG.WIN_THRESHOLD);
-    const won    = STATE.score >= needed;
-
-    const overlay  = $('#end-overlay');
-    const titleEl  = $('#end-title');
-    const msgEl    = $('#end-message');
-    const retryBtn = $('#retry-btn');
-
-    if (won) {
-        cascadeReveal();
-        if (titleEl) titleEl.textContent = '🎉 Image Revealed!';
-        if (msgEl)   msgEl.textContent   = 'You scored ' + STATE.score + '/' + STATE.total +
-            ' (' + Math.round(STATE.score / STATE.total * 100) + '%). Amazing!';
-        if (retryBtn) retryBtn.classList.add('hidden');
-    } else {
-        if (titleEl) titleEl.textContent = '😔 Not Quite…';
-        if (msgEl)   msgEl.textContent   = 'You scored ' + STATE.score + '/' + STATE.total +
-            '. You needed ' + needed + ' to reveal the image. Try again!';
-        if (retryBtn) retryBtn.classList.remove('hidden');
-    }
-
-    if (overlay) overlay.classList.remove('hidden');
-}
-
-function goBackToLauncher() {
-    clearTimers();
-    const overlay = $('#end-overlay');
-    if (overlay) overlay.classList.add('hidden');
-    showScreen('launcher-screen');
-}
-
-/* ══════════════════════════════════════════════
-   INIT
-   ══════════════════════════════════════════════ */
-
-document.addEventListener('DOMContentLoaded', () => {
-    const backBtn    = $('#back-btn');
-    const endBackBtn = $('#end-back-btn');
-    const retryBtn   = $('#retry-btn');
-
-    if (backBtn)    backBtn.addEventListener('click', goBackToLauncher);
-    if (endBackBtn) endBackBtn.addEventListener('click', goBackToLauncher);
-
-    if (retryBtn) {
-        retryBtn.addEventListener('click', () => {
-            const overlay = $('#end-overlay');
-            if (overlay) overlay.classList.add('hidden');
-            if (STATE.currentFilePath) launchGame(STATE.currentFilePath);
-        });
-    }
-
-    const retryPath = sessionStorage.getItem('mgr_retry');
-    if (retryPath) {
-        sessionStorage.removeItem('mgr_retry');
-        launchGame(retryPath);
-    } else {
-        buildLauncher();
-    }
-});
+        const indices  = q.options.map((_, i)
