@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   MYSTERY GRID REVEAL — script.js  (v2.2)
+   MYSTERY GRID REVEAL — script.js  (v3)
    Math parser · Grid engine · Gamble mechanics
    ═══════════════════════════════════════════════════════ */
 
@@ -42,8 +42,6 @@ const UPRIGHT_WORDS = [
 
 const PH_OPEN  = '\u0001';
 const PH_CLOSE = '\u0002';
-
-// ── Helpers ──
 
 function findMatch(s, start, open, close) {
     let depth = 0;
@@ -102,8 +100,6 @@ function grabRightOperand(s, slashIdx) {
     if (m) return { text: m[1], end: slashIdx + 1 + (right.length - right.trimStart().length) + m[1].length };
     return { text: right, end: s.length };
 }
-
-// ── Core converters ──
 
 function convertFractions(s) {
     let safety = 0;
@@ -166,10 +162,6 @@ function toLatex(raw) {
     return s;
 }
 
-// ── Expression detector (v2.2) ──
-// Only triggers for strings with actual math operators.
-// Bare numbers, units, and prose stay as plain text.
-
 function hasMathOperator(s) {
     return /[+\-×÷=^/√∛<>≤≥≠≈]/.test(s);
 }
@@ -183,8 +175,6 @@ function isPureExpression(s) {
     return true;
 }
 
-// ── Parse helpers ──
-
 function parseRun(s) {
     if (isPureExpression(s)) return '\\(' + toLatex(s) + '\\)';
     return s;
@@ -197,7 +187,6 @@ function wrapMathRuns(text) {
 
     for (const tok of tokens) {
         if (/^\s+$/.test(tok)) {
-            // Flush buffer only if it contains a real math operator
             if (mathBuf) {
                 if (hasMathOperator(mathBuf)) {
                     result += '\\(' + toLatex(mathBuf.trim()) + '\\)';
@@ -231,46 +220,38 @@ function wrapMathRuns(text) {
     return result;
 }
 
-// ── PUBLIC ENTRY POINT ──
-
 function parseMathToLatex(raw) {
     if (!raw || typeof raw !== 'string') return raw;
     try {
         let s = raw;
 
-        // 1. Protect currency: $21.80  $5  $1.40
         const currencySlots = [];
         s = s.replace(/\$(\s?\d[\d,.]*)/g, (_, g) => {
             currencySlots.push('$' + g);
             return PH_OPEN + 'CUR' + (currencySlots.length - 1) + PH_CLOSE;
         });
 
-        // 2. Protect explicit $...$ math (if any)
         const explicitSlots = [];
         s = s.replace(/\$([^$]+)\$/g, (_, g) => {
             explicitSlots.push('\\(' + toLatex(g) + '\\)');
             return PH_OPEN + 'EXP' + (explicitSlots.length - 1) + PH_CLOSE;
         });
 
-        // 3. Protect compound units — store ORIGINAL text for plain restoration
         const unitSlots = [];
         for (const [unit] of UNIT_LIST) {
             const esc = unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             s = s.replace(new RegExp(esc, 'g'), (match) => {
-                unitSlots.push(match);   // store "km/h" not LaTeX
+                unitSlots.push(match);
                 return PH_OPEN + 'UNT' + (unitSlots.length - 1) + PH_CLOSE;
             });
         }
 
-        // 4. Convert math
         if (isPureExpression(s)) {
             s = '\\(' + toLatex(s) + '\\)';
         } else {
             s = wrapMathRuns(s);
         }
 
-        // 5. Restore placeholders
-        //    Units → plain text (no MathJax = no font mismatch)
         s = s.replace(new RegExp(PH_OPEN + 'UNT(\\d+)' + PH_CLOSE, 'g'),
             (_, i) => unitSlots[+i]);
         s = s.replace(new RegExp(PH_OPEN + 'EXP(\\d+)' + PH_CLOSE, 'g'),
@@ -438,12 +419,12 @@ async function loadQuestion() {
 
     qTextEl.innerHTML = `<strong>Q${STATE.currentIndex + 1}.</strong> ${parseMathToLatex(q.qText)}`;
 
-    const shouldShuffle = CONFIG.SHUFFLE_OPTIONS !== false;
+    // Always shuffle options
     const pairs = q.options.map((text, idx) => ({
         text,
         isCorrect: idx === q.correctIndex
     }));
-    const shuffled = shouldShuffle ? shuffleArray(pairs) : pairs;
+    const shuffled = shuffleArray(pairs);
     STATE.liveOptions = shuffled;
     STATE.liveCorrectIndex = shuffled.findIndex(p => p.isCorrect);
 
@@ -465,15 +446,24 @@ async function loadQuestion() {
 
     await typesetMath(qTextEl);
     await typesetMath(optContainer);
+
+    // Offer gamble BEFORE answering (if tiles available to risk)
+    if (STATE.revealedHistory.length > 0 && STATE.shuffledTiles.length > 0) {
+        offerGamble();
+    }
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 7 — ANSWER CHECKING
+   SECTION 7 — ANSWER CHECKING (v3: auto-advance on wrong)
    ═══════════════════════════════════════════════════════ */
 
 function checkAnswer(selectedIndex) {
     if (STATE.isAnswering) return;
     STATE.isAnswering = true;
+
+    // Remove gamble prompt if visible
+    const prompt = document.getElementById('gamble-prompt');
+    if (prompt) prompt.remove();
 
     const buttons = document.querySelectorAll('.option-btn');
     buttons.forEach(b => b.disabled = true);
@@ -486,42 +476,42 @@ function checkAnswer(selectedIndex) {
         revealTile(wasGambling ? 2 : 1);
         STATE.gambleMode = false;
         document.querySelector('.game-container')?.classList.remove('gamble-active');
+
+        if (wasGambling) {
+            showEncouragement('gamble-win');
+        }
+
         setTimeout(() => {
             STATE.currentIndex++;
             loadQuestion();
         }, 700);
     } else {
+        // Show wrong + correct highlights
         buttons[selectedIndex].classList.add('wrong');
         buttons[STATE.liveCorrectIndex].classList.add('correct');
 
-        const wasGambling = STATE.gambleMode;
-        if (wasGambling) resolveGambleLoss();
+        // If gambled and lost, take away a tile
+        if (STATE.gambleMode) {
+            resolveGambleLoss();
+            showEncouragement('gamble-loss');
+        } else {
+            showEncouragement('normal');
+        }
+
         triggerGlitchPeek();
+        STATE.gambleMode = false;
+        document.querySelector('.game-container')?.classList.remove('gamble-active');
 
-        const delay = wasGambling ? 1600 : 1400;
+        // Auto-advance after 1.5s — no retry needed
         setTimeout(() => {
-            STATE.gambleMode = false;
-            document.querySelector('.game-container')?.classList.remove('gamble-active');
-
-            if (wasGambling) {
-                showEncouragement('gamble-loss');
-            } else if (STATE.revealedHistory.length > 0 && STATE.shuffledTiles.length > 1) {
-                offerGamble();
-            } else {
-                showEncouragement('normal');
-            }
-
-            buttons.forEach(b => {
-                b.disabled = false;
-                b.classList.remove('wrong', 'correct');
-            });
-            STATE.isAnswering = false;
-        }, delay);
+            STATE.currentIndex++;
+            loadQuestion();
+        }, 1500);
     }
 }
 
 /* ═══════════════════════════════════════════════════════
-   SECTION 8 — GAMBLE MECHANICS
+   SECTION 8 — GAMBLE MECHANICS (v3: pre-question bet)
    ═══════════════════════════════════════════════════════ */
 
 function revealTile(count) {
@@ -572,13 +562,13 @@ function offerGamble() {
     const prompt = document.createElement('div');
     prompt.id = 'gamble-prompt';
     prompt.innerHTML = `
-        <p class="gamble-text">⚡ GAMBLE? ⚡</p>
-        <p class="gamble-desc">Get this right on your next try →
+        <p class="gamble-text">⚡ BET A TILE? ⚡</p>
+        <p class="gamble-desc">Get this right →
             <span class="reward">2 tiles revealed!</span></p>
-        <p class="gamble-risk">But miss again →
-            <span class="risk">1 tile gets covered back up!</span></p>
+        <p class="gamble-risk">Get it wrong →
+            <span class="risk">1 tile covered back up!</span></p>
         <div class="gamble-buttons">
-            <button class="gamble-btn yes" id="gamble-yes">🎲 I'm feeling lucky!</button>
+            <button class="gamble-btn yes" id="gamble-yes">🎲 Double or nothing!</button>
             <button class="gamble-btn no"  id="gamble-no">🛡️ Play it safe</button>
         </div>`;
     panel.prepend(prompt);
@@ -598,7 +588,6 @@ function declineGamble() {
     STATE.gambleMode = false;
     const prompt = document.getElementById('gamble-prompt');
     if (prompt) prompt.remove();
-    showEncouragement('normal');
 }
 
 function resolveGambleLoss() {
@@ -621,13 +610,19 @@ function showEncouragement(type) {
         normal: [
             "So close! The image is hiding something cool… 👀",
             "Not quite! But did you catch that glimpse?",
-            "The grid is teasing you! Try again 💪",
+            "The grid is teasing you! Onward! 💪",
             "Almost! The hidden image *wants* to be found!",
             "Ooh, a fragment! Your brain is locked in now 🔒"
         ],
+        'gamble-win': [
+            "Jackpot! Two tiles down! 🎰",
+            "Risk paid off! The image is crumbling! 💎",
+            "Lucky guess! Double reveal! 🍀",
+            "Bold move! The grid is shaking! 🔥"
+        ],
         'gamble-loss': [
             "Ouch! A tile slipped back into darkness… 😬",
-            "The image retreated! Win it back! 💪",
+            "The image retreated! Better luck next bet! 💪",
             "Risk didn't pay off. Play it safe next time? 🤔",
             "The grid fights back! Don't give up! 🔥"
         ]
