@@ -12,7 +12,7 @@ const CONFIG = {
     // then GITHUB_USER = "johndoe"
 
     GITHUB_USER: "WK-Enjie",
-    GITHUB_REPO: "mystery-grid-reveal",
+    GITHUB_REPO: "brain-training-app",
     GITHUB_BRANCH: "main",
 
     // ─── Gameplay ───
