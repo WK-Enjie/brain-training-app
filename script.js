@@ -1,15 +1,15 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — script.js v6.0
-   Full rebuild: smart path resolution, static DOM, normalised data
+   MYSTERY GRID REVEAL — script.js v6.1
+   Exhaustive answer-format support + rich diagnostics
    ============================================================ */
 
 'use strict';
 
 // ═══════════════ STATE ═══════════════
 const STATE = {
-    baseUrl: null,          // resolved once, reused
+    baseUrl: null,
     index: [],
-    worksheet: null,        // normalised { title, image, questions[] }
+    worksheet: null,
     filePath: '',
     title: '',
     qIndex: 0,
@@ -25,11 +25,11 @@ const STATE = {
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
-function log(...args)  { if (CONFIG.DEBUG) console.log('[MGR]', ...args); }
-function warn(...args) { console.warn('[MGR]', ...args); }
+function log(...a)  { if (CONFIG.DEBUG) console.log('[MGR]', ...a); }
+function warn(...a) { console.warn('[MGR]', ...a); }
 
-function show(el)  { if (el) el.classList.remove('hidden'); }
-function hide(el)  { if (el) el.classList.add('hidden'); }
+function show(el) { if (el) el.classList.remove('hidden'); }
+function hide(el) { if (el) el.classList.add('hidden'); }
 
 function showScreen(id) {
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
@@ -41,7 +41,6 @@ function timer(fn, ms) {
     STATE.timers.push(id);
     return id;
 }
-
 function clearTimers() {
     STATE.timers.forEach(clearTimeout);
     STATE.timers = [];
@@ -74,7 +73,6 @@ async function tryFetchJSON(url) {
     }
 }
 
-/** Finds the working base URL by probing index.json. */
 async function resolveBase() {
     const attempted = [];
     for (const base of candidateBases()) {
@@ -90,7 +88,6 @@ async function resolveBase() {
     return { data: null, attempted };
 }
 
-/** Loads a worksheet, auto-searching fallback folders if the path is wrong. */
 async function loadWorksheetFile(filePath) {
     const attempted = [];
     const direct = `${STATE.baseUrl}/${filePath}`;
@@ -99,7 +96,6 @@ async function loadWorksheetFile(filePath) {
     let data = await tryFetchJSON(direct);
     if (data) return { data, attempted, usedPath: filePath };
 
-    // Path mismatch — search every known folder for the filename
     const name = filePath.split('/').pop();
     log(`Direct path failed. Searching folders for "${name}"…`);
 
@@ -110,7 +106,7 @@ async function loadWorksheetFile(filePath) {
         attempted.push(url);
         data = await tryFetchJSON(url);
         if (data) {
-            warn(`index.json says "${filePath}" but file is at "${alt}". Please update index.json.`);
+            warn(`index.json says "${filePath}" but file is at "${alt}".`);
             return { data, attempted, usedPath: alt };
         }
     }
@@ -121,54 +117,140 @@ async function loadWorksheetFile(filePath) {
 function normaliseIndex(raw) {
     const list = Array.isArray(raw) ? raw : (raw.worksheets || raw.items || []);
     return list.filter(Boolean).map(ws => ({
-        title:    ws.title || ws.name || 'Untitled worksheet',
-        icon:     ws.icon || '📄',
-        subject:  ws.subject || '',
-        topic:    ws.topic || '',
-        count:    ws.questionCount || ws.count || null,
-        file:     ws.file || ws.path || ''
+        title:   ws.title || ws.name || 'Untitled worksheet',
+        icon:    ws.icon || '📄',
+        subject: ws.subject || '',
+        topic:   ws.topic || '',
+        count:   ws.questionCount || ws.count || null,
+        file:    ws.file || ws.path || ''
     })).filter(ws => ws.file);
 }
 
+/**
+ * Normalises a question using every known field name and answer format.
+ * Supports:
+ *   - question / text / q / prompt / stem
+ *   - options / choices / answers / opts / alternatives / A/B/C/D keys
+ *   - answer / correct / correctAnswer / correctIndex / ans / solution / key
+ *   - answer as full string, 0-based index, 1-based index, letter A-D,
+ *     object { text }, or fuzzy-matched string
+ */
 function normaliseQuestion(raw, i) {
-    const text = String(raw.question ?? raw.text ?? raw.q ?? '').trim();
-
-    let options = raw.options ?? raw.choices ?? raw.answers ?? [];
-    if (!Array.isArray(options)) options = [];
-    options = options.map(o => String(o ?? '').trim()).filter(o => o !== '');
-
-    let answer = raw.answer ?? raw.correct ?? raw.correctAnswer ?? '';
-
-    // answer given as an index (0-based)
-    if (typeof answer === 'number' && options[answer] !== undefined) {
-        answer = options[answer];
+    // ── Diagnostic dump for Q1 ──
+    if (i === 0) {
+        log('── First question raw structure ──');
+        log('Keys:', Object.keys(raw));
+        try { log('JSON:', JSON.stringify(raw).slice(0, 800)); } catch (e) {}
     }
-    answer = String(answer).trim();
 
-    // answer given as a letter A/B/C/D
-    if (/^[A-D]$/i.test(answer) && options.length >= 4 && !options.includes(answer)) {
+    // ── Extract question text ──
+    const text = String(
+        raw.question ?? raw.text ?? raw.q ?? raw.prompt ?? raw.stem ?? ''
+    ).trim();
+
+    // ── Extract options ──
+    let options = raw.options ?? raw.choices ?? raw.answers ??
+                  raw.opts ?? raw.alternatives ?? null;
+
+    // Options as A/B/C/D keyed object
+    if (!options && (raw.A || raw.a)) {
+        options = [
+            raw.A ?? raw.a, raw.B ?? raw.b,
+            raw.C ?? raw.c, raw.D ?? raw.d
+        ].filter(v => v != null);
+    }
+
+    if (!Array.isArray(options)) options = [];
+
+    // Options may be objects like { text: "...", correct: true }
+    let correctFromObject = null;
+    options = options.map((o, idx) => {
+        if (o && typeof o === 'object') {
+            if (o.correct === true || o.isCorrect === true) correctFromObject = idx;
+            return String(o.text ?? o.label ?? o.value ?? o.answer ?? '').trim();
+        }
+        return String(o ?? '').trim();
+    }).filter(o => o !== '');
+
+    // ── Extract answer (try every known key) ──
+    let answer = raw.answer ?? raw.correct ?? raw.correctAnswer ??
+                 raw.correct_answer ?? raw.correctOption ??
+                 raw.correctIndex ?? raw.correct_index ??
+                 raw.ans ?? raw.solution ?? raw.key ?? null;
+
+    // Answer embedded inside an option object { correct: true }
+    if (answer == null && correctFromObject != null) {
+        answer = options[correctFromObject];
+    }
+
+    // Numeric index (0-based)
+    if (typeof answer === 'number') {
+        if (options[answer] !== undefined) {
+            answer = options[answer];
+        } else if (options[answer - 1] !== undefined) {
+            // 1-based fallback
+            answer = options[answer - 1];
+        }
+    }
+
+    // Object answer { text: "..." }
+    if (answer && typeof answer === 'object') {
+        answer = answer.text ?? answer.value ?? answer.label ?? '';
+    }
+
+    answer = String(answer ?? '').trim();
+
+    // Letter A/B/C/D
+    if (/^[A-D]$/i.test(answer) && options.length >= 2 && !options.includes(answer)) {
         const idx = answer.toUpperCase().charCodeAt(0) - 65;
         if (options[idx] !== undefined) answer = options[idx];
     }
 
+    // Numeric string "0", "1", "2", "3" as index
+    if (/^\d+$/.test(answer) && !options.includes(answer)) {
+        const idx = parseInt(answer, 10);
+        if (options[idx] !== undefined) {
+            answer = options[idx];
+        } else if (options[idx - 1] !== undefined) {
+            answer = options[idx - 1];
+        }
+    }
+
+    // Fuzzy match: case-insensitive, trimmed, whitespace-collapsed
+    if (!options.includes(answer) && answer !== '') {
+        const norm = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+        const target = norm(answer);
+        const hit = options.find(o => norm(o) === target);
+        if (hit) answer = hit;
+    }
+
     const valid = text !== '' && options.length >= 2 && options.includes(answer);
+
     if (!valid) {
-        warn(`Question ${i + 1} is malformed:`, { text, options, answer });
+        warn(
+            `Q${i + 1} REJECTED:\n` +
+            `  text:    "${text.slice(0, 80)}${text.length > 80 ? '…' : ''}"\n` +
+            `  options: ${JSON.stringify(options).slice(0, 200)}\n` +
+            `  answer:  "${answer}"\n` +
+            `  rawKeys: [${Object.keys(raw).join(', ')}]`
+        );
     }
 
     return { text, options, answer, valid };
 }
 
 function normaliseWorksheet(raw) {
-    const qsRaw = raw.questions || raw.items || [];
-    const questions = qsRaw.map(normaliseQuestion).filter(q => q.valid);
+    log('── Worksheet top-level keys ──', Object.keys(raw));
+    const qsRaw = raw.questions || raw.items || raw.quiz || [];
+    log(`Raw question count: ${qsRaw.length}`);
 
+    const questions = qsRaw.map(normaliseQuestion).filter(q => q.valid);
     const dropped = qsRaw.length - questions.length;
-    if (dropped > 0) warn(`${dropped} malformed question(s) skipped.`);
+    if (dropped > 0) warn(`${dropped} question(s) skipped.`);
 
     return {
-        title:    raw.title || raw.name || '',
-        image:    raw.revealImage || raw.image || raw.imageUrl || '',
+        title: raw.title || raw.name || '',
+        image: raw.revealImage || raw.image || raw.imageUrl || raw.img || '',
         questions
     };
 }
@@ -193,7 +275,7 @@ async function init() {
     log(`Index loaded: ${STATE.index.length} worksheet(s)`);
 
     if (STATE.index.length === 0) {
-        showLauncherError(attempted, 'index.json loaded but contains no valid entries (each needs a "file" field).');
+        showLauncherError(attempted, 'index.json loaded but contains no valid entries.');
         return;
     }
 
@@ -210,8 +292,7 @@ function showLauncherError(attempted, customMsg) {
         <h3>⚠️ Could not load worksheets</h3>
         <p>${customMsg || 'None of these URLs returned valid JSON:'}</p>
         <ul>${attempted.map(u => `<li><code>${u}</code></li>`).join('')}</ul>
-        <p class="hint">Check that <code>Questions/index.json</code> exists in your repo
-        and that the folder name capitalisation matches.</p>
+        <p class="hint">Check that <code>Questions/index.json</code> exists in your repo.</p>
         <button class="end-btn" onclick="location.reload()">Reload</button>
     `;
     show(box);
@@ -282,7 +363,7 @@ async function startWorksheet(filePath, title) {
     if (STATE.total === 0) {
         $('#question-text').innerHTML =
             '<span class="inline-error">⚠️ No valid questions in this worksheet.</span><br>' +
-            '<small>Open the console (F12) to see which entries were rejected.</small>';
+            '<small>Open the console (F12) to see which fields were missing.</small>';
         return;
     }
 
@@ -312,7 +393,7 @@ function gridDims(n, targetAspect = 1.5) {
 
 function setupGrid(imageUrl) {
     const img = $('#reveal-image');
-    img.onerror = () => { warn('Image failed to load:', imageUrl); img.src = PLACEHOLDER_IMG; };
+    img.onerror = () => { warn('Image failed:', imageUrl); img.src = PLACEHOLDER_IMG; };
     img.src = (imageUrl && imageUrl.length > 5) ? imageUrl : PLACEHOLDER_IMG;
 
     const grid = $('#grid-overlay');
