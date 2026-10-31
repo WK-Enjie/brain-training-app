@@ -11,7 +11,7 @@ const CONFIG = {
     //   https://github.com/johndoe/mystery-grid-reveal
     // then GITHUB_USER = "johndoe"
 
-    GITHUB_USER: "YOUR_USERNAME_HERE",
+    GITHUB_USER: "WK-Enjie",
     GITHUB_REPO: "mystery-grid-reveal",
     GITHUB_BRANCH: "main",
 
