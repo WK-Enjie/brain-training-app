@@ -1,46 +1,46 @@
 {
-    "worksheetTitle": "Algebra: Intermediate Expressions, Fractions & Equations",
-    "revealImageUrl": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1200",
+    "worksheetTitle": "Algebra: Basic Expressions, Simplification & Simple Equations",
+    "revealImageUrl": "hhttps://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1200",
     "questions": [
         {
-            "qText": "Expand and simplify: -2x(3x - 5) + 4(x^2 - 2x)",
-            "options": ["-6x^2 + 2x", "-2x^2 + 2x", "-2x^2 - 2x", "10x^2 + 2x"],
-            "correctIndex": 1
+            "qText": "Expand and simplify: 3(2x + 4) - 2(x - 3)",
+            "options": ["4x + 18", "4x + 6", "4x - 18", "8x + 18"],
+            "correctIndex": 0
         },
         {
-            "qText": "Express as a single fraction: (3a - 1)/4 + (2a + 5)/6",
-            "options": ["(5a + 4)/10", "(13a - 7)/12", "(13a + 7)/24", "(13a + 7)/12"],
+            "qText": "Simplify: 5a - 2(3a - 4b) + 7b",
+            "options": ["11a + 15b", "a + 15b", "-a + 15b", "-a - b"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Solve for x: 4(2x - 1) = 3(x + 2)",
+            "options": ["x = 1", "x = 3", "x = 2", "x = 4"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A rectangle has length (2x + 3) cm and width (x + 1) cm. If the perimeter is 32 cm, find the value of x.",
+            "options": ["x = 4", "x = 6", "x = 3", "x = 5"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Simplify the algebraic fraction: (5x + 2)/3 - (2x - 1)/3",
+            "options": ["3x + 3", "3x + 1", "x + 1", "x + 3"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Expand and simplify: x(3x - 4) + 2x(x + 5)",
+            "options": ["5x^2 + 14x", "x^2 + 6x", "5x^2 - 6x", "5x^2 + 6x"],
             "correctIndex": 3
         },
         {
-            "qText": "Solve for x: (2x + 1)/3 = (x + 4)/2",
-            "options": ["x = 8", "x = 10", "x = 11", "x = 14"],
-            "correctIndex": 1
-        },
-        {
-            "qText": "The sum of two numbers is 45. The larger number is 3 more than twice the smaller number. Find the larger number.",
-            "options": ["31", "28", "34", "14"],
-            "correctIndex": 0
-        },
-        {
-            "qText": "Simplify: 3/x + 2/(x - 1)",
-            "options": ["5/(x(x - 1))", "(5x + 3)/(x(x - 1))", "(5x - 3)/(x(x - 1))", "5/(2x - 1)"],
+            "qText": "John has $y. Mary has $15 more than John. Together they have $65. How much money does Mary have?",
+            "options": ["$35", "$25", "$40", "$50"],
             "correctIndex": 2
         },
         {
-            "qText": "Solve for y: 5 - (2y - 1)/3 = y + 2",
-            "options": ["y = 4", "y = 1", "y = 2", "y = 3"],
-            "correctIndex": 2
-        },
-        {
-            "qText": "Expand and simplify: (2x - 3)(x + 4) - x(x - 2)",
-            "options": ["x^2 + 7x - 12", "3x^2 + 7x - 12", "x^2 + 7x + 12", "x^2 + 5x - 12"],
-            "correctIndex": 0
-        },
-        {
-            "qText": "A shop sells pens at $x each and notebooks at $(x + 2) each. Buying 3 pens and 2 notebooks costs $19. Find the cost of one notebook.",
-            "options": ["$3", "$5", "$7", "$4"],
-            "correctIndex": 1
+            "qText": "Solve for k: 7 - 2(k + 3) = 5k - 6",
+            "options": ["k = 2", "k = -1", "k = 0", "k = 1"],
+            "correctIndex": 3
         }
     ]
 }
