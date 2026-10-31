@@ -145,7 +145,8 @@ function normaliseQuestion(raw, i) {
 
     // ── Extract question text ──
     const text = String(
-        raw.question ?? raw.text ?? raw.q ?? raw.prompt ?? raw.stem ?? ''
+            const text = String(
+        raw.qText ?? raw.question ?? raw.text ?? raw.q ?? raw.prompt ?? raw.stem ?? ''
     ).trim();
 
     // ── Extract options ──
