@@ -1,10 +1,11 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — script.js v6.2
-   Fix: added qText to field list (matches your JSON structure)
+   MYSTERY GRID REVEAL — script.js
+   Schema-driven loader. No more field-name guessing.
    ============================================================ */
 
 'use strict';
 
+// ═══════════════ STATE ═══════════════
 const STATE = {
     baseUrl: null,
     index: [],
@@ -20,6 +21,7 @@ const STATE = {
     timers: []
 };
 
+// ═══════════════ HELPERS ═══════════════
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
@@ -42,6 +44,36 @@ function timer(fn, ms) {
 function clearTimers() {
     STATE.timers.forEach(clearTimeout);
     STATE.timers = [];
+}
+
+/* Pick the first non-empty value for any key in `keys` from object `obj`. */
+function pick(obj, keys, fallback = undefined) {
+    if (!obj || !Array.isArray(keys)) return fallback;
+    for (const k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') {
+            return obj[k];
+        }
+    }
+    return fallback;
+}
+
+/* Merge a user schema with the default. User keys appear first. */
+function mergeSchema(userSchema) {
+    const def = CONFIG.DEFAULT_SCHEMA;
+    const u = userSchema || {};
+    const merge = (user, defaults) => {
+        const out = {};
+        for (const k of Object.keys(defaults)) {
+            const userList = Array.isArray(user[k]) ? user[k] : (user[k] ? [user[k]] : []);
+            const defList = defaults[k];
+            out[k] = [...new Set([...userList, ...defList])];
+        }
+        return out;
+    };
+    return {
+        worksheet: merge(u.worksheet || {}, def.worksheet),
+        question:  merge(u.question  || {}, def.question)
+    };
 }
 
 // ═══════════════ PATH RESOLUTION ═══════════════
@@ -79,7 +111,7 @@ async function resolveBase() {
         const data = await tryFetchJSON(url);
         if (data) {
             STATE.baseUrl = base;
-            log('Base URL resolved →', base);
+            log('Base URL →', base);
             return { data, attempted };
         }
     }
@@ -111,11 +143,11 @@ async function loadWorksheetFile(filePath) {
     return { data: null, attempted, usedPath: null };
 }
 
-// ═══════════════ DATA NORMALISATION ═══════════════
+// ═══════════════ NORMALISERS ═══════════════
 function normaliseIndex(raw) {
     const list = Array.isArray(raw) ? raw : (raw.worksheets || raw.items || []);
     return list.filter(Boolean).map(ws => ({
-        title:   ws.title || ws.name || 'Untitled worksheet',
+        title:   ws.title || ws.name || 'Untitled',
         icon:    ws.icon || '📄',
         subject: ws.subject || '',
         topic:   ws.topic || '',
@@ -124,29 +156,23 @@ function normaliseIndex(raw) {
     })).filter(ws => ws.file);
 }
 
-function normaliseQuestion(raw, i) {
-    if (i === 0) {
-        log('── First question raw structure ──');
-        log('Keys:', Object.keys(raw));
-    }
+/* Normalises a single question using the schema. */
+function normaliseQuestion(raw, i, schema) {
+    const text = String(pick(raw, schema.question.text, '')).trim();
 
-    // ★ qText added first — matches your JSON structure
-    const text = String(
-        raw.qText ?? raw.question ?? raw.text ?? raw.q ?? raw.prompt ?? raw.stem ?? ''
-    ).trim();
+    // ── Options ──
+    let options = pick(raw, schema.question.options, null);
 
-    let options = raw.options ?? raw.choices ?? raw.answers ??
-                  raw.opts ?? raw.alternatives ?? null;
-
+    // Options as A/B/C/D keyed object
     if (!options && (raw.A || raw.a)) {
         options = [
             raw.A ?? raw.a, raw.B ?? raw.b,
             raw.C ?? raw.c, raw.D ?? raw.d
         ].filter(v => v != null);
     }
-
     if (!Array.isArray(options)) options = [];
 
+    // Options may be objects
     let correctFromObject = null;
     options = options.map((o, idx) => {
         if (o && typeof o === 'object') {
@@ -156,44 +182,32 @@ function normaliseQuestion(raw, i) {
         return String(o ?? '').trim();
     }).filter(o => o !== '');
 
-    // ★ correctIndex is already here — works as numeric index
-    let answer = raw.correctIndex ?? raw.answer ?? raw.correct ??
-                 raw.correctAnswer ?? raw.correct_answer ??
-                 raw.correctOption ?? raw.correct_index ??
-                 raw.ans ?? raw.solution ?? raw.key ?? null;
+    // ── Answer ──
+    let answer = pick(raw, schema.question.answer, null);
+    if (answer == null && correctFromObject != null) answer = options[correctFromObject];
 
-    if (answer == null && correctFromObject != null) {
-        answer = options[correctFromObject];
-    }
-
+    // numeric index
     if (typeof answer === 'number') {
-        if (options[answer] !== undefined) {
-            answer = options[answer];
-        } else if (options[answer - 1] !== undefined) {
-            answer = options[answer - 1];
-        }
+        if (options[answer] !== undefined) answer = options[answer];
+        else if (options[answer - 1] !== undefined) answer = options[answer - 1];
     }
-
     if (answer && typeof answer === 'object') {
         answer = answer.text ?? answer.value ?? answer.label ?? '';
     }
-
     answer = String(answer ?? '').trim();
 
+    // letter A/B/C/D
     if (/^[A-D]$/i.test(answer) && options.length >= 2 && !options.includes(answer)) {
         const idx = answer.toUpperCase().charCodeAt(0) - 65;
         if (options[idx] !== undefined) answer = options[idx];
     }
-
+    // numeric string as index
     if (/^\d+$/.test(answer) && !options.includes(answer)) {
         const idx = parseInt(answer, 10);
-        if (options[idx] !== undefined) {
-            answer = options[idx];
-        } else if (options[idx - 1] !== undefined) {
-            answer = options[idx - 1];
-        }
+        if (options[idx] !== undefined) answer = options[idx];
+        else if (options[idx - 1] !== undefined) answer = options[idx - 1];
     }
-
+    // fuzzy match
     if (!options.includes(answer) && answer !== '') {
         const norm = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim();
         const target = norm(answer);
@@ -203,11 +217,11 @@ function normaliseQuestion(raw, i) {
 
     const valid = text !== '' && options.length >= 2 && options.includes(answer);
 
-    if (!valid) {
+    if (!valid && i < 3) {
         warn(
-            `Q${i + 1} REJECTED:\n` +
+            `Q${i + 1} rejected:\n` +
             `  text:    "${text.slice(0, 80)}"\n` +
-            `  options: ${JSON.stringify(options).slice(0, 200)}\n` +
+            `  options: ${JSON.stringify(options).slice(0, 160)}\n` +
             `  answer:  "${answer}"\n` +
             `  rawKeys: [${Object.keys(raw).join(', ')}]`
         );
@@ -217,17 +231,20 @@ function normaliseQuestion(raw, i) {
 }
 
 function normaliseWorksheet(raw) {
-    log('Worksheet keys:', Object.keys(raw));
-    const qsRaw = raw.questions || raw.items || raw.quiz || [];
-    log(`Raw question count: ${qsRaw.length}`);
+    const schema = mergeSchema(raw.schema);
+    log('Using schema:', JSON.stringify(schema));
 
-    const questions = qsRaw.map(normaliseQuestion).filter(q => q.valid);
+    const qsRaw = pick(raw, schema.worksheet.questions, []);
+    log(`Found ${qsRaw.length} raw questions`);
+
+    const questions = qsRaw.map((q, i) => normaliseQuestion(q, i, schema))
+                           .filter(q => q.valid);
     const dropped = qsRaw.length - questions.length;
-    if (dropped > 0) warn(`${dropped} question(s) skipped.`);
+    if (dropped > 0) warn(`${dropped} question(s) rejected.`);
 
     return {
-        title: raw.title || raw.name || '',
-        image: raw.revealImage || raw.image || raw.imageUrl || raw.img || '',
+        title:    pick(raw, schema.worksheet.title, ''),
+        image:    pick(raw, schema.worksheet.image, ''),
         questions
     };
 }
@@ -242,17 +259,15 @@ async function init() {
     });
 
     const { data, attempted } = await resolveBase();
-
     if (!data) { showLauncherError(attempted); return; }
 
     STATE.index = normaliseIndex(data);
-    log(`Index loaded: ${STATE.index.length} worksheet(s)`);
+    log(`Index: ${STATE.index.length} worksheet(s)`);
 
     if (STATE.index.length === 0) {
         showLauncherError(attempted, 'index.json loaded but contains no valid entries.');
         return;
     }
-
     buildLauncher();
 }
 
@@ -261,12 +276,10 @@ function showLauncherError(attempted, customMsg) {
     const box  = $('#launcher-error');
     if (list) list.innerHTML = '';
     if (!box) return;
-
     box.innerHTML = `
         <h3>⚠️ Could not load worksheets</h3>
         <p>${customMsg || 'None of these URLs returned valid JSON:'}</p>
         <ul>${attempted.map(u => `<li><code>${u}</code></li>`).join('')}</ul>
-        <p class="hint">Check that <code>Questions/index.json</code> exists in your repo.</p>
         <button class="end-btn" onclick="location.reload()">Reload</button>
     `;
     show(box);
@@ -276,7 +289,6 @@ function showLauncherError(attempted, customMsg) {
 function buildLauncher() {
     const container = $('#worksheet-list');
     container.innerHTML = '';
-
     STATE.index.forEach(ws => {
         const card = document.createElement('button');
         card.className = 'ws-card';
@@ -315,7 +327,7 @@ async function startWorksheet(filePath, title) {
 
     showScreen('game-screen');
     $('#worksheet-title').textContent = STATE.title;
-    $('#question-text').textContent   = 'Loading questions…';
+    $('#question-text').textContent   = 'Loading…';
     $('#options-container').innerHTML = '';
     $('#gamble-slot').innerHTML       = '';
     $('#progress-tracker').textContent = '';
@@ -336,12 +348,12 @@ async function startWorksheet(filePath, title) {
 
     if (STATE.total === 0) {
         $('#question-text').innerHTML =
-            '<span class="inline-error">⚠️ No valid questions in this worksheet.</span><br>' +
-            '<small>Open the console (F12) to see details.</small>';
+            '<span class="inline-error">⚠️ No valid questions.</span><br>' +
+            '<small>Open the console (F12) and compare your JSON keys to the schema shown.</small>';
         return;
     }
 
-    log(`Worksheet ready: ${STATE.total} questions`);
+    log(`Ready: ${STATE.total} questions`);
     setupGrid(STATE.worksheet.image);
     showQuestion(0);
 }
@@ -436,19 +448,15 @@ function isPureExpression(s) {
 function wrapMathRuns(text) {
     if (typeof text !== 'string' || !text) return '';
     let out = '', i = 0;
-
     while (i < text.length) {
         const ch = text[i];
         let start = false;
-
-        if (MATH_START.test(ch)) {
-            start = true;
-        } else if (MATH_VARS.test(ch)) {
+        if (MATH_START.test(ch)) start = true;
+        else if (MATH_VARS.test(ch)) {
             const prev = i > 0 ? text[i - 1] : ' ';
             const next = i < text.length - 1 ? text[i + 1] : ' ';
             if (/[\s(]/.test(prev) && VAR_NEXT.test(next)) start = true;
         }
-
         if (start) {
             let j = i;
             while (j < text.length) {
@@ -462,10 +470,7 @@ function wrapMathRuns(text) {
             const run = text.slice(i, j);
             out += isPureExpression(run) ? `\\(${run}\\)` : run;
             i = j;
-        } else {
-            out += ch;
-            i++;
-        }
+        } else { out += ch; i++; }
     }
     return out;
 }
@@ -492,9 +497,7 @@ function renderMath(el) {
     };
     if (MathJax.startup && MathJax.startup.promise) {
         MathJax.startup.promise.then(run).catch(run);
-    } else {
-        run();
-    }
+    } else { run(); }
 }
 
 // ═══════════════ QUESTIONS ═══════════════
@@ -511,18 +514,16 @@ function showQuestion(index) {
     clearTimers();
     if (index >= STATE.total) { finishGame(); return; }
 
-    STATE.qIndex   = index;
+    STATE.qIndex = index;
     STATE.answered = false;
     STATE.gambling = false;
 
     const q = STATE.worksheet.questions[index];
-
     $('#question-text').innerHTML = processMath(q.text);
 
     const box = $('#options-container');
     box.innerHTML = '';
     const opts = CONFIG.SHUFFLE_OPTIONS ? shuffle(q.options) : q.options;
-
     opts.forEach(opt => {
         const btn = document.createElement('button');
         btn.className = 'opt-btn';
@@ -553,16 +554,15 @@ function offerGamble() {
     slot.innerHTML = `
         <div class="gamble-prompt">
             <p>🎰 <strong>Bet a tile?</strong>
-               Correct → +${CONFIG.GAMBLE_REWARD} tiles · Wrong → −${CONFIG.GAMBLE_PENALTY} tile</p>
+               Correct → +${CONFIG.GAMBLE_REWARD} · Wrong → −${CONFIG.GAMBLE_PENALTY}</p>
             <div class="gamble-actions">
                 <button type="button" class="gamble-yes">Bet</button>
                 <button type="button" class="gamble-no">Pass</button>
             </div>
         </div>`;
-
     slot.querySelector('.gamble-yes').addEventListener('click', () => {
         STATE.gambling = true;
-        slot.innerHTML = '<div class="gamble-active">🎰 Bet placed — good luck!</div>';
+        slot.innerHTML = '<div class="gamble-active">🎰 Bet placed!</div>';
         const pool = hiddenTiles();
         if (pool.length) {
             const idx = pool[Math.floor(Math.random() * pool.length)];
@@ -570,7 +570,6 @@ function offerGamble() {
             if (tile) tile.classList.add('gamble-glow');
         }
     });
-
     slot.querySelector('.gamble-no').addEventListener('click', () => {
         STATE.gambling = false;
         slot.innerHTML = '';
@@ -588,7 +587,6 @@ function checkAnswer(selected, correct) {
         if (btn.dataset.value === correct) btn.classList.add('correct');
         if (btn.dataset.value === selected && !isRight) btn.classList.add('wrong');
     });
-
     $$('.grid-tile.gamble-glow').forEach(t => t.classList.remove('gamble-glow'));
 
     if (isRight) {
@@ -596,9 +594,7 @@ function checkAnswer(selected, correct) {
         if (STATE.gambling) {
             for (let i = 0; i < CONFIG.GAMBLE_REWARD; i++) revealTile();
             toast(`🎰 Jackpot! +${CONFIG.GAMBLE_REWARD} tiles`);
-        } else {
-            revealTile();
-        }
+        } else { revealTile(); }
     } else {
         if (STATE.gambling) {
             for (let i = 0; i < CONFIG.GAMBLE_PENALTY; i++) hideTile();
@@ -622,7 +618,6 @@ function winTarget() {
 function finishGame() {
     const won = STATE.correct >= winTarget();
     if (!won) { endGame(false); return; }
-
     const pool = hiddenTiles();
     pool.forEach((idx, i) => {
         timer(() => {
@@ -640,20 +635,18 @@ function finishGame() {
 function endGame(didWin) {
     const total = STATE.total, got = STATE.correct, need = winTarget();
     const pct = Math.round((got / total) * 100);
-
     let title, msg;
     if (didWin && got === total) {
         title = '🏆 Perfect Score!';
-        msg   = `All ${total} correct. The full image is yours.`;
+        msg = `All ${total} correct.`;
     } else if (didWin) {
         title = '🎉 Image Unlocked!';
-        msg   = `${got} / ${total} correct (${pct}%). You needed ${need}. Well done!`;
+        msg = `${got} / ${total} correct (${pct}%). Needed ${need}.`;
     } else {
         title = '🔒 Not Quite';
-        msg   = `${got} / ${total} correct (${pct}%). You needed ${need} to unlock the image.`;
+        msg = `${got} / ${total} correct (${pct}%). Needed ${need}.`;
     }
-
-    $('#end-title').textContent   = title;
+    $('#end-title').textContent = title;
     $('#end-message').textContent = msg;
     $('#retry-btn').classList.toggle('hidden', didWin);
     show($('#end-overlay'));
