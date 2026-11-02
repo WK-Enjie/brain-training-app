@@ -75,15 +75,15 @@
         {
             "qText": "Which of the following ions has the exact same electronic configuration as an Argon atom (2,8,8)?",
             "options": [
-                "Sodium ion (Na+)",
-                "Magnesium ion (Mg2+)",
-                "Oxide ion (O2-)",
-                "Chloride ion (Cl-)"
+                "Sodium ion (Na^+)",
+                "Magnesium ion (Mg^{2+})",
+                "Oxide ion (O^{2-})",
+                "Chloride ion (Cl^-)"
             ],
             "correctIndex": 3
         },
         {
-            "qText": "An ion X2+ contains 18 electrons and 20 neutrons. What is the nucleon number of element X?",
+            "qText": "An ion X^{2+} contains 18 electrons and 20 neutrons. What is the nucleon number of element X?",
             "options": ["20", "38", "40", "42"],
             "correctIndex": 2
         },
@@ -98,7 +98,7 @@
             "correctIndex": 0
         },
         {
-            "qText": "When a sodium atom (Na) forms a sodium ion (Na+), what happens to its size and why?",
+            "qText": "When a sodium atom (Na) forms a sodium ion (Na^+), what happens to its size and why?",
             "options": [
                 "It increases because it gains an extra electron shell.",
                 "It decreases because it loses its outermost electron shell.",
@@ -108,7 +108,7 @@
             "correctIndex": 1
         },
         {
-            "qText": "An atom of phosphorus has a proton number of 15 and a nucleon number of 31. What is the number of protons, neutrons, and electrons in a phosphide ion (P3-)?",
+            "qText": "An atom of phosphorus has a proton number of 15 and a nucleon number of 31. What is the number of protons, neutrons, and electrons in a phosphide ion (P^{3-})?",
             "options": [
                 "15 protons, 16 neutrons, 18 electrons.",
                 "15 protons, 16 neutrons, 15 electrons.",
@@ -118,18 +118,18 @@
             "correctIndex": 0
         },
         {
-            "qText": "Aluminium sulfate has the chemical formula Al2(SO4)3. Aluminium forms an Al3+ ion. What is the formula of the sulfate ion?",
-            "options": ["SO4-", "SO4 2-", "SO4 3-", "SO4 4-"],
+            "qText": "Aluminium sulfate has the chemical formula Al_2(SO_4)_3. Aluminium forms an Al^{3+} ion. What is the formula of the sulfate ion?",
+            "options": ["SO_4^-", "SO_4^{2-}", "SO_4^{3-}", "SO_4^{4-}"],
             "correctIndex": 1
         },
         {
-            "qText": "Iron(III) chloride has the chemical formula FeCl3. Chlorine is in Group 17 and forms a Cl- ion. What is the formula of the iron ion in this compound?",
-            "options": ["Fe+", "Fe2+", "Fe3+", "Fe4+"],
+            "qText": "Iron(III) chloride has the chemical formula FeCl_3. Chlorine is in Group 17 and forms a Cl^- ion. What is the formula of the iron ion in this compound?",
+            "options": ["Fe^+", "Fe^{2+}", "Fe^{3+}", "Fe^{4+}"],
             "correctIndex": 2
         },
         {
             "qText": "Element P is in Group 2 of the Periodic Table and Element Q is in Group 17. What is the most likely formula of the ionic compound they form?",
-            "options": ["PQ", "P2Q", "PQ2", "P2Q7"],
+            "options": ["PQ", "P_2Q", "PQ_2", "P_2Q_7"],
             "correctIndex": 2
         },
         {
@@ -163,7 +163,7 @@
             "correctIndex": 2
         },
         {
-            "qText": "Water (H2O) has a relatively low boiling point of 100 degrees Celsius. Which statement best explains this?",
+            "qText": "Water (H_2O) has a relatively low boiling point of 100 degrees Celsius. Which statement best explains this?",
             "options": [
                 "The covalent bonds between the atoms are weak and easily broken by heat.",
                 "The molecules are small and do not contain many electrons to share.",
@@ -183,12 +183,12 @@
             "correctIndex": 1
         },
         {
-            "qText": "How many shared pairs of electrons are present in a single molecule of methane (CH4)?",
+            "qText": "How many shared pairs of electrons are present in a single molecule of methane (CH_4)?",
             "options": ["1", "2", "3", "4"],
             "correctIndex": 3
         },
         {
-            "qText": "The halogens (F2, Cl2, Br2, I2) are all simple molecular covalent substances. Why does the boiling point increase as you go down Group 17 from fluorine to iodine?",
+            "qText": "The halogens (F_2, Cl_2, Br_2, I_2) are all simple molecular covalent substances. Why does the boiling point increase as you go down Group 17 from fluorine to iodine?",
             "options": [
                 "The covalent bonds between the halogen atoms become stronger down the group.",
                 "The atoms become heavier, making them much harder to boil at higher temperatures.",
@@ -200,15 +200,15 @@
         {
             "qText": "Which of the following molecules contains exactly two shared pairs of electrons (a double bond)?",
             "options": [
-                "Ammonia (NH3)",
-                "Water (H2O)",
-                "Oxygen (O2)",
-                "Chlorine (Cl2)"
+                "Ammonia (NH_3)",
+                "Water (H_2O)",
+                "Oxygen (O_2)",
+                "Chlorine (Cl_2)"
             ],
             "correctIndex": 2
         },
         {
-            "qText": "In a molecule of ammonia (NH3), how many lone pairs of electrons are present on the central nitrogen atom?",
+            "qText": "In a molecule of ammonia (NH_3), how many lone pairs of electrons are present on the central nitrogen atom?",
             "options": ["0", "1", "2", "3"],
             "correctIndex": 1
         }
