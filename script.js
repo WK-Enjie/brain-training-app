@@ -1,8 +1,6 @@
 /* ═══════════════════════════════════════════════════════
-   Mystery Grid Reveal — Game Engine v7.4
-   Schema-driven · Balanced fractions · Fixed vault
-   Question randomisation · Math-only option wrapping
-   Negative & fractional exponents
+   Mystery Grid Reveal — Game Engine v7.5
+   Added: subscripts (_2) and superscripts (^+, ^{2+}) for chemistry
    ═══════════════════════════════════════════════════════ */
 
 const $  = s => document.querySelector(s);
@@ -20,7 +18,6 @@ const STATE = {
    MATH PIPELINE
    ══════════════════════════════════════════════ */
 
-/* ── Balanced-bracket fraction converter ── */
 function convertFractions(t) {
     if (!t || !t.includes('/')) return t;
     let result = '', i = 0;
@@ -95,18 +92,30 @@ function convertFractions(t) {
     return result;
 }
 
-/* ── Power converter: handles ^3, ^-3, ^(1/3), ^(x-1) ── */
+/* ── Powers: ^3, ^-3, ^(1/3), ^{2+}, ^+, ^- ── */
 function convertPowers(t) {
     if (!t) return t;
+    // Already-braced ^{...} — leave alone
+    // ^-digits → ^{-digits}
     t = t.replace(/\^-(\d+)/g, '^{-$1}');
+    // ^(expr) → ^{expr}
     t = t.replace(/\^\(([^)]+)\)/g, '^{$1}');
+    // Lone ^+ or ^- (ion charges)
+    t = t.replace(/\^([+\-])(?![{\d])/g, '^{$1}');
+    // ^digits → ^{digits}
     t = t.replace(/\^(\d+)/g, '^{$1}');
     return t;
 }
 
+/* ── Subscripts: _2 → _{2}, _12 → _{12} ── */
+function convertSubscripts(t) {
+    if (!t) return t;
+    return t.replace(/_(\d+)/g, '_{$1}');
+}
+
 function convertNotation(t) {
     if (!t) return t;
-    return convertPowers(convertFractions(t));
+    return convertPowers(convertSubscripts(convertFractions(t)));
 }
 
 /* ── Format a single answer option ── */
@@ -124,11 +133,13 @@ function formatOption(raw) {
 
     t = convertNotation(t);
 
-    // Only wrap in MathJax if it contains actual math notation
-    const hasLatex    = /\\frac|\\sqrt|\^\{/.test(t);
+    // Wrap in MathJax only if it contains actual math notation
+    const hasLatex    = /\\frac|\\sqrt|\^\{|_\{/.test(t);
     const hasEquation = /=/.test(t);
 
     if (hasLatex || hasEquation) {
+        // Split: wrap only the math part, keep plain text outside
+        // Simple strategy: wrap whole thing — MathJax \text{} not needed for short options
         t = '\\(' + t.trim() + '\\)';
     }
 
@@ -163,12 +174,24 @@ function formatQuestionText(raw) {
             t = prefix + ' \\(' + mathPart + '\\)';
         }
     } else {
+        // Wrap parenthesised expressions with variables or math notation
         t = t.replace(/\(([^)]*[a-z][^)]*)\)/gi, m => {
             return '\\(' + m + '\\)';
         });
     }
 
-    /* Phase 4: Standalone variables outside \(...\) */
+    /* Phase 4: Wrap chemistry formulas outside parens (e.g. "Al_2(SO_4)_3" at top level) */
+    // Match sequences like X_2, X^+, X_2Y_3 — identifiers with subscripts/superscripts
+    t = t.replace(/([A-Z][a-z]?(?:_\{[^}]+\}|\^\{[^}]+\})(?:[A-Z][a-z]?(?:_\{[^}]+\}|\^\{[^}]+\})?)*)/g, (m, _, offset, str) => {
+        // Skip if already inside \(...\)
+        const before = str.substring(0, offset);
+        const opens  = (before.match(/\\\(/g) || []).length;
+        const closes = (before.match(/\\\)/g) || []).length;
+        if (opens > closes) return m;
+        return '\\(' + m + '\\)';
+    });
+
+    /* Phase 5: Standalone variables outside \(...\) */
     t = t.replace(/(?<![a-zA-Z\\])([xyz])(?![a-zA-Z{}])/gi, (m, v, offset, str) => {
         const before = str.substring(0, offset);
         const opens  = (before.match(/\\\(/g) || []).length;
@@ -177,7 +200,7 @@ function formatQuestionText(raw) {
         return '\\(' + v + '\\)';
     });
 
-    /* Phase 5: Restore vault */
+    /* Phase 6: Restore vault */
     t = t.replace(/§V(\d+)§/g, (_, i) => vault[parseInt(i)]);
 
     return t;
@@ -252,8 +275,6 @@ function normaliseWorksheet(raw) {
     const questions = [];
     rawQs.forEach((q, i) => { const nq = normaliseQuestion(q, i, schema); if (nq) questions.push(nq); });
     if (!questions.length) return null;
-
-    // ★ Randomise flag: defaults to true, set "randomise": false in JSON to disable
     const randomise = raw.randomise !== false;
     return { title, image, questions, randomise };
 }
@@ -342,7 +363,6 @@ async function launchGame(fp) {
         const raw = await loadWorksheetFile(fp), ws = normaliseWorksheet(raw);
         if (!ws) { showToast('Failed to parse worksheet'); return; }
 
-        // ★ Randomise questions unless worksheet says not to
         const qs = ws.randomise ? shuffle(ws.questions) : ws.questions;
 
         Object.assign(STATE, { worksheet:ws, questions:qs, total:qs.length,
@@ -420,7 +440,6 @@ function showQuestion() {
     if (qEl) { qEl.innerHTML = formatQuestionText(q.text); typesetMath(qEl); }
     if (pEl) pEl.textContent = 'Question ' + (STATE.currentIndex+1) + ' of ' + STATE.total + '  ·  Score: ' + STATE.score;
 
-    /* Gamble — only when tiles exist to gain AND risk */
     if (gSlot) {
         gSlot.innerHTML = '';
         if (CONFIG.GAMBLE_ENABLED && STATE.currentIndex > 0 &&
