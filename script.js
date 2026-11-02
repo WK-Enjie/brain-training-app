@@ -94,7 +94,14 @@ function convertFractions(t) {
 }
 
 function convertPowers(t) {
-    return t ? t.replace(/\^(\d+)/g, '^{$1}') : t;
+    if (!t) return t;
+    // ^-3 → ^{-3}  (negative exponents)
+    t = t.replace(/\^-(\d+)/g, '^{-$1}');
+    // ^(expr) → ^{expr}  (grouped exponents like ^(1/3) or ^(x-1))
+    t = t.replace(/\^\(([^)]+)\)/g, '^{$1}');
+    // ^3 → ^{3}  (simple positive exponents)
+    t = t.replace(/\^(\d+)/g, '^{$1}');
+    return t;
 }
 
 function convertNotation(t) {
