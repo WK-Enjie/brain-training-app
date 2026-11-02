@@ -21,7 +21,7 @@
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
         "questionCount": 12,
-        "file": "secondary/upper/math/indices-01.json"
+        "file": "secondary/upper/emath/indices-01.json"
     },
     {
         "title": "Indices: Advanced Laws & Exponential Equations (Part 2)",
@@ -29,7 +29,7 @@
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
         "questionCount": 12,
-        "file": "secondary/upper/math/indices-02.json"
+        "file": "secondary/upper/emath/indices-02.json"
     },
     {
         "title": "Matter, Atoms, Isotopes & Bonding",
