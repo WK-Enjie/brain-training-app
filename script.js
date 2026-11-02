@@ -333,8 +333,9 @@ async function launchGame(fp) {
     try {
         const raw = await loadWorksheetFile(fp), ws = normaliseWorksheet(raw);
         if (!ws) { showToast('Failed to parse worksheet'); return; }
-        Object.assign(STATE, { worksheet:ws, questions:ws.questions, total:ws.questions.length,
-            currentIndex:0, score:0, locked:false, gambleActive:false });
+        const qs = ws.randomise ? shuffle(ws.questions) : ws.questions;
+Object.assign(STATE, { worksheet:ws, questions:qs, total:qs.length,
+    currentIndex:0, score:0, locked:false, gambleActive:false });;
         computeGrid(); setupGameScreen(); showScreen('game-screen'); buildGrid(); showQuestion();
     } catch (e) { showToast('Error: ' + e.message); }
 }
