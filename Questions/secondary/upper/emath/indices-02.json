@@ -1,0 +1,30 @@
+{
+    "worksheetTitle": "Indices: Fractional Indices & Intermediate Equations",
+    "revealImageUrl": "https://raw.githubusercontent.com/WK-Enjie/brain-training-app/main/images/singapore-2.jpg",
+    "questions": [
+        {"qText": "Simplify: a^(2/3) × a^(1/3)", "options": ["1", "a^(2/9)", "a^2", "a"], "correctIndex": 3},
+        {"qText": "Evaluate: 27^(2/3)", "options": ["27", "18", "3", "9"], "correctIndex": 3},
+        {"qText": "Simplify: (16x^4)^(1/2)", "options": ["16x^2", "4x^4", "8x^2", "4x^2"], "correctIndex": 3},
+        {"qText": "Simplify: x^-2 ÷ x^-5", "options": ["x^-7", "x^7", "x^-3", "x^3"], "correctIndex": 3},
+        {"qText": "Solve for x: 2^(2x) = 64", "options": ["x = 4", "x = 32", "x = 6", "x = 3"], "correctIndex": 3},
+        {"qText": "Simplify: (2a^-2 b^3)^-2", "options": ["1 / 4a^4b^6", "a^4 / 2b^6", "4a^4 / b^6", "a^4 / 4b^6"], "correctIndex": 3},
+        {"qText": "Evaluate: 8^(-2/3)", "options": ["2", "4", "1/2", "1/4"], "correctIndex": 3},
+        {"qText": "Solve for x: 3^(x+2) = 81", "options": ["x = 1", "x = 79", "x = 4", "x = 2"], "correctIndex": 3},
+        {"qText": "Simplify: 12x^3 y^-2 ÷ 4xy^3", "options": ["3x^4 / y", "8x^2 / y^5", "3x^2 y^5", "3x^2 / y^5"], "correctIndex": 3},
+        {"qText": "Simplify: (x^2 y^3)^-1", "options": ["-x^2 y^3", "1 / x^2 y^-3", "x^2 / y^3", "1 / x^2 y^3"], "correctIndex": 3},
+        {"qText": "Solve for x: 5^(2x-1) = 125", "options": ["x = 1", "x = 62", "x = 3", "x = 2"], "correctIndex": 3},
+        {"qText": "Simplify: (27a^6 b^-3)^(1/3)", "options": ["3a^2 b", "3a^3 / b", "9a^2 / b", "3a^2 / b"], "correctIndex": 3},
+        {"qText": "Evaluate: (1/8)^(-2/3)", "options": ["8", "2", "1/4", "4"], "correctIndex": 3},
+        {"qText": "Simplify: (x^(1/2) × x^(3/2)) ÷ x^-1", "options": ["x", "x^-1", "x^2", "x^3"], "correctIndex": 3},
+        {"qText": "Solve for x: 2^x × 2^3 = 2^7", "options": ["x = 2", "x = 10", "x = 7", "x = 4"], "correctIndex": 3},
+        {"qText": "Simplify: (3x^(1/2))^4", "options": ["81x^4", "12x^2", "9x^2", "81x^2"], "correctIndex": 3},
+        {"qText": "Express with positive indices: 2/x^-3 + 3/y^-2", "options": ["6x^3y^2", "2/x^3 + 3/y^2", "2x^-3 + 3y^-2", "2x^3 + 3y^2"], "correctIndex": 3},
+        {"qText": "Solve for x: 3^x × 3^x = 81", "options": ["x = 3", "x = 40.5", "x = 4", "x = 2"], "correctIndex": 3},
+        {"qText": "Simplify: (2x^3 / y^2)^-2", "options": ["1 / 4x^6y^4", "y^4 / 2x^6", "4x^6 / y^4", "y^4 / 4x^6"], "correctIndex": 3},
+        {"qText": "Evaluate: 4^(3/2) + 27^(1/3)", "options": ["9", "31", "7", "11"], "correctIndex": 3},
+        {"qText": "Solve for x: 4^(x+1) = 8^(x-1)", "options": ["x = 1.5", "x = -1", "x = 2", "x = 5"], "correctIndex": 3},
+        {"qText": "Simplify: a^(2/3) (a^(1/3) + 2a^(4/3))", "options": ["a + 2a", "2a^2", "a^2 + 2a^3", "a + 2a^2"], "correctIndex": 3},
+        {"qText": "Simplify: (2x^2)^3 × 3x^-1 ÷ 6x^2", "options": ["12x^3", "4x^5", "x^3", "4x^3"], "correctIndex": 3},
+        {"qText": "Solve for x: 3^(x+1) - 3^x = 18", "options": ["x = 1", "x = 6", "x = 3", "x = 2"], "correctIndex": 3}
+    ]
+}
