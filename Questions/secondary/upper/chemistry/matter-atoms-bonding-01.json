@@ -1,0 +1,216 @@
+{
+    "worksheetTitle": "Matter, Atoms, Isotopes & Bonding",
+    "revealImageUrl": "https://raw.githubusercontent.com/WK-Enjie/brain-training-app/main/images/placeholder.jpg",
+    "questions": [
+        {
+            "qText": "When a solid is heated and begins to melt, the temperature remains constant until all the solid has turned into a liquid. What is the heat energy being used for during this time?",
+            "options": [
+                "Breaking the strong covalent bonds between the atoms.",
+                "Overcoming the attractive forces between the particles.",
+                "Increasing the kinetic energy of the particles.",
+                "Expanding the physical volume of the particles."
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Carbon dioxide gas is pressurised and cooled to form liquid carbon dioxide for underground storage. How do the arrangement and movement of the molecules change during this physical process?",
+            "options": [
+                "Particles move closer and vibrate in fixed positions.",
+                "Particles move further apart and vibrate in fixed positions.",
+                "Particles move closer together and slide past one another.",
+                "Particles move further apart and move randomly at high speeds."
+            ],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Ammonia gas is less dense than air and highly soluble in water. Which method is most suitable for collecting a sample of ammonia gas in the laboratory?",
+            "options": [
+                "Upward delivery into an inverted gas jar.",
+                "Downward delivery into an upright gas jar.",
+                "Downward displacement of water in a trough.",
+                "Bubbling the gas through a neutral salt solution."
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Chlorine gas is denser than air and slightly soluble in water. How should a sample of chlorine gas be collected?",
+            "options": [
+                "Upward delivery into an inverted gas jar.",
+                "Downward displacement of water in a trough.",
+                "Bubbling the gas through a neutral salt solution.",
+                "Downward delivery into an upright gas jar."
+            ],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Hydrogen gas is insoluble in water and is the least dense gas. Which combination of methods can be used to collect it?",
+            "options": [
+                "Upward delivery or downward displacement of water.",
+                "Downward delivery or upward displacement of water.",
+                "Upward delivery or upward displacement of water.",
+                "Downward delivery or downward displacement of water."
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "A student collects a colourless gas in a test tube. Which test and result confirms the gas is oxygen?",
+            "options": [
+                "It bleaches damp litmus paper.",
+                "It relights a glowing splint.",
+                "It produces a white precipitate with limewater.",
+                "It makes a popping sound with a lighted splint."
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Chlorine exists as two main isotopes: Chlorine-35 and Chlorine-37. Which statement correctly defines why they are isotopes?",
+            "options": [
+                "Same number of protons and neutrons.",
+                "Different number of protons, same neutrons.",
+                "Same number of protons, different neutrons.",
+                "Different number of protons and neutrons."
+            ],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Which of the following ions has the exact same electronic configuration as an Argon atom (2,8,8)?",
+            "options": [
+                "Sodium ion (Na+)",
+                "Magnesium ion (Mg2+)",
+                "Oxide ion (O2-)",
+                "Chloride ion (Cl-)"
+            ],
+            "correctIndex": 3
+        },
+        {
+            "qText": "An ion X2+ contains 18 electrons and 20 neutrons. What is the nucleon number of element X?",
+            "options": ["20", "38", "40", "42"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Why is the relative atomic mass (Ar) of copper 63.5, rather than a whole number?",
+            "options": [
+                "The weighted average mass of its naturally occurring isotopes.",
+                "The mass of a single atom compared to a hydrogen atom.",
+                "The total number of protons and neutrons in its heaviest isotope.",
+                "The average mass of its atoms minus the mass of its electrons."
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "When a sodium atom (Na) forms a sodium ion (Na+), what happens to its size and why?",
+            "options": [
+                "It increases because it gains an extra electron shell.",
+                "It decreases because it loses its outermost electron shell.",
+                "It increases because the protons repel each other strongly.",
+                "It remains the same because the nucleus does not change."
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "An atom of phosphorus has a proton number of 15 and a nucleon number of 31. What is the number of protons, neutrons, and electrons in a phosphide ion (P3-)?",
+            "options": [
+                "15 protons, 16 neutrons, 18 electrons.",
+                "15 protons, 16 neutrons, 15 electrons.",
+                "15 protons, 31 neutrons, 18 electrons.",
+                "12 protons, 16 neutrons, 18 electrons."
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Aluminium sulfate has the chemical formula Al2(SO4)3. Aluminium forms an Al3+ ion. What is the formula of the sulfate ion?",
+            "options": ["SO4-", "SO4 2-", "SO4 3-", "SO4 4-"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Iron(III) chloride has the chemical formula FeCl3. Chlorine is in Group 17 and forms a Cl- ion. What is the formula of the iron ion in this compound?",
+            "options": ["Fe+", "Fe2+", "Fe3+", "Fe4+"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Element P is in Group 2 of the Periodic Table and Element Q is in Group 17. What is the most likely formula of the ionic compound they form?",
+            "options": ["PQ", "P2Q", "PQ2", "P2Q7"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Why do ionic compounds like magnesium oxide have very high melting points?",
+            "options": [
+                "Strong covalent bonds between atoms require high energy to break.",
+                "Weak intermolecular forces hold molecules together in a lattice.",
+                "Mobile delocalised electrons bind the ions tightly in a giant structure.",
+                "Strong electrostatic forces between oppositely charged ions require high energy."
+            ],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Solid sodium chloride does not conduct electricity, but aqueous sodium chloride does. Which statement best explains this?",
+            "options": [
+                "Solid does not conduct, aqueous does, because ions are free to move in solution.",
+                "Solid conducts, aqueous does not, because ions are fixed in the solid.",
+                "Solid conducts, aqueous does not, because water blocks the flow of electrons.",
+                "Solid does not conduct, aqueous does, because water provides the necessary electrons."
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Ionic compounds are typically brittle. What happens at the particle level when a strong force is applied to an ionic crystal?",
+            "options": [
+                "The covalent bonds snap under pressure, shattering the crystal into pieces.",
+                "Electrons are squeezed out of the lattice, causing the structure to collapse.",
+                "Layers of ions slide, bringing like charges together which repel and split the crystal.",
+                "The ions are compressed into a smaller volume, causing them to explode outwards."
+            ],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Water (H2O) has a relatively low boiling point of 100 degrees Celsius. Which statement best explains this?",
+            "options": [
+                "The covalent bonds between the atoms are weak and easily broken by heat.",
+                "The molecules are small and do not contain many electrons to share.",
+                "Simple molecular compounds have no forces of attraction between their atoms.",
+                "The intermolecular forces between the molecules are weak and easily overcome."
+            ],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Why does liquid hydrogen chloride (HCl) not conduct electricity?",
+            "options": [
+                "The covalent bonds are too strong to allow electrons to move freely.",
+                "It contains no mobile ions or free electrons to carry an electrical charge.",
+                "It only conducts when dissolved in water because water acts as a catalyst.",
+                "The molecules are too far apart in the liquid state to transfer electrons."
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "How many shared pairs of electrons are present in a single molecule of methane (CH4)?",
+            "options": ["1", "2", "3", "4"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "The halogens (F2, Cl2, Br2, I2) are all simple molecular covalent substances. Why does the boiling point increase as you go down Group 17 from fluorine to iodine?",
+            "options": [
+                "The covalent bonds between the halogen atoms become stronger down the group.",
+                "The atoms become heavier, making them much harder to boil at higher temperatures.",
+                "The number of shared electron pairs increases significantly down the group.",
+                "The molecules become larger, leading to stronger intermolecular forces of attraction."
+            ],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Which of the following molecules contains exactly two shared pairs of electrons (a double bond)?",
+            "options": [
+                "Ammonia (NH3)",
+                "Water (H2O)",
+                "Oxygen (O2)",
+                "Chlorine (Cl2)"
+            ],
+            "correctIndex": 2
+        },
+        {
+            "qText": "In a molecule of ammonia (NH3), how many lone pairs of electrons are present on the central nitrogen atom?",
+            "options": ["0", "1", "2", "3"],
+            "correctIndex": 1
+        }
+    ]
+}
