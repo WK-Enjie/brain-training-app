@@ -16,7 +16,7 @@
         "file": "secondary/lower/math/algebra-expressions-02.json"
     },
     {
-        "title": "Indices: Laws, Simplification & Equations",
+        "title": "Indices: Laws, Simplification & Equations (Part 1)",
         "icon": "🔼",
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
@@ -24,11 +24,20 @@
         "file": "secondary/upper/math/indices-01.json"
     },
     {
-        "title": "Indices: Advanced Laws & Exponential Equations",
+        "title": "Indices: Advanced Laws & Exponential Equations (Part 2)",
         "icon": "📈",
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
         "questionCount": 12,
         "file": "secondary/upper/math/indices-02.json"
+    }
+
+    {
+        "title": "Matter, Atoms, Isotopes & Bonding",
+        "icon": "⚗️",
+        "subject": "Upper Sec Chemistry",
+        "topic": "Atomic Structure & Bonding",
+        "questionCount": 24,
+        "file": "secondary/upper/chemistry/matter-atoms-bonding-01.json"
     }
 ]
