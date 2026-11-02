@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════════════
-   Mystery Grid Reveal — Game Engine v7.3
-   Fixed vault placeholders · Fixed word-problem wrapping
+   Mystery Grid Reveal — Game Engine v7.4
+   Schema-driven · Balanced fractions · Fixed vault
+   Question randomisation · Math-only option wrapping
+   Negative & fractional exponents
    ═══════════════════════════════════════════════════════ */
 
 const $  = s => document.querySelector(s);
@@ -93,13 +95,11 @@ function convertFractions(t) {
     return result;
 }
 
+/* ── Power converter: handles ^3, ^-3, ^(1/3), ^(x-1) ── */
 function convertPowers(t) {
     if (!t) return t;
-    // ^-3 → ^{-3}  (negative exponents)
     t = t.replace(/\^-(\d+)/g, '^{-$1}');
-    // ^(expr) → ^{expr}  (grouped exponents like ^(1/3) or ^(x-1))
     t = t.replace(/\^\(([^)]+)\)/g, '^{$1}');
-    // ^3 → ^{3}  (simple positive exponents)
     t = t.replace(/\^(\d+)/g, '^{$1}');
     return t;
 }
@@ -134,15 +134,15 @@ function formatOption(raw) {
 
     return t + unit;
 }
+
 /* ── Format full question text (mixed English + math) ── */
 function formatQuestionText(raw) {
     if (!raw || typeof raw !== 'string') return '';
     let t = raw;
     const vault = [];
-    /* § is safe: survives innerHTML, won't appear in math/English text */
     const save = m => { vault.push(m); return '§V' + (vault.length - 1) + '§'; };
 
-    /* ── Phase 1: Stash non-math tokens ── */
+    /* Phase 1: Stash non-math tokens */
     t = t.replace(/\$\d+(?:\.\d+)?/g, save);
     t = t.replace(
         /\d+\s*(?:km\/h|cm\^2|cm²|m\^2|m²|cm|mm|m|km|kg|g|minutes?|mins?|hours?|hrs?|seconds?|secs?|years?|yrs?|marks?|questions?|items?|pens?|notebooks?)/gi,
@@ -151,26 +151,24 @@ function formatQuestionText(raw) {
     t = t.replace(/\d+-(?:question|mark|item|year|minute|hour)/gi, save);
     t = t.replace(/(\))\s+(cm|mm|m|km|kg|g)\b/gi, (_, p, u) => p + save(' ' + u));
 
-    /* ── Phase 2: Convert notation ── */
+    /* Phase 2: Convert notation */
     t = convertNotation(t);
 
-    /* ── Phase 3: Wrap math zones ── */
+    /* Phase 3: Wrap math zones */
     const colonIdx = t.lastIndexOf(':');
     if (colonIdx > 5 && colonIdx < t.length - 3) {
-        /* Instruction type: "Simplify: 7a - 3[2b - ...]" */
         const prefix   = t.substring(0, colonIdx + 1);
         let   mathPart = t.substring(colonIdx + 1).trim();
         if (mathPart && /[a-z\\]/i.test(mathPart)) {
             t = prefix + ' \\(' + mathPart + '\\)';
         }
     } else {
-        /* Word problem: wrap parenthesised expressions containing variables */
-        t = t.replace(/\(([^)]*[a-z][^)]*)\)/gi, (m, inner) => {
+        t = t.replace(/\(([^)]*[a-z][^)]*)\)/gi, m => {
             return '\\(' + m + '\\)';
         });
     }
 
-    /* ── Phase 4: Standalone variables outside \(...\) ── */
+    /* Phase 4: Standalone variables outside \(...\) */
     t = t.replace(/(?<![a-zA-Z\\])([xyz])(?![a-zA-Z{}])/gi, (m, v, offset, str) => {
         const before = str.substring(0, offset);
         const opens  = (before.match(/\\\(/g) || []).length;
@@ -179,7 +177,7 @@ function formatQuestionText(raw) {
         return '\\(' + v + '\\)';
     });
 
-    /* ── Phase 5: Restore vault ── */
+    /* Phase 5: Restore vault */
     t = t.replace(/§V(\d+)§/g, (_, i) => vault[parseInt(i)]);
 
     return t;
@@ -253,7 +251,11 @@ function normaliseWorksheet(raw) {
     if (!Array.isArray(rawQs) || !rawQs.length) return null;
     const questions = [];
     rawQs.forEach((q, i) => { const nq = normaliseQuestion(q, i, schema); if (nq) questions.push(nq); });
-    return questions.length ? { title, image, questions } : null;
+    if (!questions.length) return null;
+
+    // ★ Randomise flag: defaults to true, set "randomise": false in JSON to disable
+    const randomise = raw.randomise !== false;
+    return { title, image, questions, randomise };
 }
 
 async function resolveBase() {
@@ -326,6 +328,12 @@ async function buildLauncher() {
    GAME ENGINE
    ══════════════════════════════════════════════ */
 
+function shuffle(a) {
+    const b = [...a];
+    for (let i = b.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
+    return b;
+}
+
 async function launchGame(fp) {
     if (!fp) return;
     clearTimers();
@@ -333,9 +341,12 @@ async function launchGame(fp) {
     try {
         const raw = await loadWorksheetFile(fp), ws = normaliseWorksheet(raw);
         if (!ws) { showToast('Failed to parse worksheet'); return; }
+
+        // ★ Randomise questions unless worksheet says not to
         const qs = ws.randomise ? shuffle(ws.questions) : ws.questions;
-Object.assign(STATE, { worksheet:ws, questions:qs, total:qs.length,
-    currentIndex:0, score:0, locked:false, gambleActive:false });;
+
+        Object.assign(STATE, { worksheet:ws, questions:qs, total:qs.length,
+            currentIndex:0, score:0, locked:false, gambleActive:false });
         computeGrid(); setupGameScreen(); showScreen('game-screen'); buildGrid(); showQuestion();
     } catch (e) { showToast('Error: ' + e.message); }
 }
@@ -397,12 +408,6 @@ function cascadeReveal() {
 /* ══════════════════════════════════════════════
    QUESTIONS
    ══════════════════════════════════════════════ */
-
-function shuffle(a) {
-    const b = [...a];
-    for (let i = b.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
-    return b;
-}
 
 function showQuestion() {
     if (STATE.currentIndex >= STATE.total) { endGame(); return; }
