@@ -116,10 +116,17 @@ function formatOption(raw) {
     }
 
     t = convertNotation(t);
-    if (t.trim() && /[a-z+\-*/=^\\]/i.test(t)) t = '\\(' + t.trim() + '\\)';
+
+    // Only wrap in MathJax if it contains actual math notation
+    const hasLatex    = /\\frac|\\sqrt|\^\{/.test(t);
+    const hasEquation = /=/.test(t);
+
+    if (hasLatex || hasEquation) {
+        t = '\\(' + t.trim() + '\\)';
+    }
+
     return t + unit;
 }
-
 /* ── Format full question text (mixed English + math) ── */
 function formatQuestionText(raw) {
     if (!raw || typeof raw !== 'string') return '';
