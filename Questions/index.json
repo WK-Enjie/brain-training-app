@@ -14,5 +14,21 @@
         "topic": "Algebra",
         "questionCount": 24,
         "file": "secondary/lower/math/algebra-expressions-02.json"
+    },
+    {
+        "title": "Indices: Laws, Simplification & Equations",
+        "icon": "🔼",
+        "subject": "Upper Sec E-Maths",
+        "topic": "Indices",
+        "questionCount": 12,
+        "file": "secondary/upper/math/indices-01.json"
+    },
+    {
+        "title": "Indices: Advanced Laws & Exponential Equations",
+        "icon": "📈",
+        "subject": "Upper Sec E-Maths",
+        "topic": "Indices",
+        "questionCount": 12,
+        "file": "secondary/upper/math/indices-02.json"
     }
 ]
