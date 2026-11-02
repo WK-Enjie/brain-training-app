@@ -1,6 +1,6 @@
 [
     {
-        "title": "Algebra: Expressions, Fractions & Equations",
+        "title": "Algebra: Expressions, Fractions & Equations (Part 1)",
         "icon": "🔤",
         "subject": "Lower Sec E-Maths",
         "topic": "Algebra",
@@ -8,8 +8,8 @@
         "file": "secondary/lower/math/algebra-expressions-01.json"
     },
     {
-        "title": "Algebra: Expressions, Fractions & Equations",
-        "icon": "📏",
+        "title": "Algebra: Expressions, Fractions & Equations (Part 2)",
+        "icon": "🔤",
         "subject": "Lower Sec E-Maths",
         "topic": "Algebra",
         "questionCount": 24,
