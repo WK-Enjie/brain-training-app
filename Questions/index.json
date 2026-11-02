@@ -4,7 +4,7 @@
         "icon": "🔤",
         "subject": "Lower Sec E-Maths",
         "topic": "Algebra",
-        "questionCount": 24,
+        "questionCount": 18,
         "file": "secondary/lower/math/algebra-expressions-01.json"
     },
     {
@@ -12,7 +12,7 @@
         "icon": "🔤",
         "subject": "Lower Sec E-Maths",
         "topic": "Algebra",
-        "questionCount": 24,
+        "questionCount": 18,
         "file": "secondary/lower/math/algebra-expressions-02.json"
     },
     {
@@ -20,7 +20,7 @@
         "icon": "🔼",
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
-        "questionCount": 12,
+        "questionCount": 18,
         "file": "secondary/upper/emath/indices-01.json"
     },
     {
@@ -28,7 +28,7 @@
         "icon": "📈",
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
-        "questionCount": 12,
+        "questionCount": 18,
         "file": "secondary/upper/emath/indices-02.json"
     },
     {
@@ -36,7 +36,7 @@
         "icon": "⚗️",
         "subject": "Upper Sec Chemistry",
         "topic": "Atomic Structure & Bonding",
-        "questionCount": 24,
+        "questionCount": 18,
         "file": "secondary/upper/chemistry/matter-atoms-bonding-01.json"
     }
 ]
