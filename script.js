@@ -266,7 +266,7 @@ async function launchGame(fp) {
     currentFile = fp;
     showScreen("game-screen");
     try {
-        ws = normaliseWorksheet(await fetchJSON(fp));
+        ws = normaliseWorksheet(await fetchJSON(`${Q_PATH}/${fp}`));
         if (ws.randomise) shuffle(ws.questions);
         qIdx = 0; score = 0; answered = new Set(); totalQ = ws.questions.length;
 
