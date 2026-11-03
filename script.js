@@ -1,28 +1,24 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — script.js v7.6.2
-   Fixes: 1) Q_PATH prefix for worksheet fetch
-          2) Chemical parens only match element symbols, not English
-          3) Phase 3 no longer wraps comma-lists or wordy text
-          4) Multi-element formulas (H2SO4, CO2) wrap as one unit
+   MYSTERY GRID REVEAL — script.js v7.6.3
+   All fixes: Q_PATH, chemistry parens, cursive text, image
    ============================================================ */
 (() => {
 "use strict";
 
-/* ── Config ─────────────────────────────────────────────── */
 const C = window.CONFIG || {};
-const GH_USER    = C.GITHUB_USER    || "WK-Enjie";
-const GH_REPO    = C.GITHUB_REPO    || "brain-training-app";
-const GH_BRANCH  = C.GITHUB_BRANCH  || "main";
-const Q_PATH     = C.QUESTIONS_PATH || "Questions";
-const INDEX_FILE = C.INDEX_FILE     || "index.json";
+const GH_USER     = C.GITHUB_USER    || "WK-Enjie";
+const GH_REPO     = C.GITHUB_REPO    || "brain-training-app";
+const GH_BRANCH   = C.GITHUB_BRANCH  || "main";
+const Q_PATH      = C.QUESTIONS_PATH || "Questions";
+const INDEX_FILE  = C.INDEX_FILE     || "index.json";
 const SHUFFLE_OPT = C.SHUFFLE_OPTIONS !== false;
-const WIN_THRESH = C.WIN_THRESHOLD  || 0.75;
-const DEL_OK     = C.DELAY_CORRECT  || 900;
-const DEL_BAD    = C.DELAY_WRONG    || 1600;
-const GAMBLE_ON  = C.GAMBLE_ENABLED !== false;
-const G_REWARD   = C.GAMBLE_REWARD  || 2;
-const G_PENALTY  = C.GAMBLE_PENALTY || 1;
-const DEBUG      = C.DEBUG !== false;
+const WIN_THRESH  = C.WIN_THRESHOLD  || 0.75;
+const DEL_OK      = C.DELAY_CORRECT  || 900;
+const DEL_BAD     = C.DELAY_WRONG    || 1600;
+const GAMBLE_ON   = C.GAMBLE_ENABLED !== false;
+const G_REWARD    = C.GAMBLE_REWARD  || 2;
+const G_PENALTY   = C.GAMBLE_PENALTY || 1;
+const DEBUG       = C.DEBUG !== false;
 
 const SCHEMA = C.DEFAULT_SCHEMA || {
     worksheet: {
@@ -39,14 +35,11 @@ const SCHEMA = C.DEFAULT_SCHEMA || {
     }
 };
 
-/* ── State ──────────────────────────────────────────────── */
 let ws = null, qIdx = 0, score = 0, totalQ = 0;
 let answered = new Set(), currentFile = "";
 
-/* ── DOM helper ─────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
 
-/* ── Utilities ──────────────────────────────────────────── */
 function shuffle(a) {
     for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -57,7 +50,7 @@ function shuffle(a) {
 const delay = ms => new Promise(r => setTimeout(r, ms));
 function log(...a) { if (DEBUG) console.log("[MGR]", ...a); }
 
-/* ── Notation converters ────────────────────────────────── */
+/* ── Notation ───────────────────────────────────────────── */
 
 function stripOuter(s) {
     s = s.trim();
@@ -77,7 +70,6 @@ function convertFractions(t) {
     let out = "", i = 0;
     while (i < t.length) {
         if (t[i] !== "/") { out += t[i]; i++; continue; }
-
         let j = out.length - 1, numStr = "";
         if (j >= 0 && out[j] === ")") {
             let d = 1; j--;
@@ -86,14 +78,11 @@ function convertFractions(t) {
                 if (out[j] === "(") d--;
                 j--;
             }
-            j++;
-            numStr = out.slice(j);
+            j++; numStr = out.slice(j);
         } else {
             while (j >= 0 && /[a-zA-Z0-9.\s]/.test(out[j])) j--;
-            j++;
-            numStr = out.slice(j);
+            j++; numStr = out.slice(j);
         }
-
         let k = i + 1, denStr = "";
         if (k < t.length && t[k] === "(") {
             let d = 1; k++;
@@ -107,24 +96,21 @@ function convertFractions(t) {
             while (k < t.length && /[a-zA-Z0-9.\s]/.test(t[k])) k++;
             denStr = t.slice(i + 1, k);
         }
-
         if (numStr.trim() && denStr.trim()) {
             out = out.slice(0, out.length - numStr.length)
-                + `\\frac{${stripOuter(numStr)}}{${stripOuter(denStr)}}`;
+                + "\\frac{" + stripOuter(numStr) + "}{" + stripOuter(denStr) + "}";
             i = k;
-        } else {
-            out += "/"; i++;
-        }
+        } else { out += "/"; i++; }
     }
     return out;
 }
 
 function convertPowers(t) {
-    t = t.replace(/\^-(\d+)/g,        "^{-$1}");
-    t = t.replace(/\^\(([^)]+)\)/g,   "^{$1}");
-    t = t.replace(/\^(\d+)([+-])/g,   "^{$1$2}");
-    t = t.replace(/\^([+-])(?!\d)/g,  "^{$1}");
-    t = t.replace(/\^(\d+)/g,         "^{$1}");
+    t = t.replace(/\^-(\d+)/g,       "^{-$1}");
+    t = t.replace(/\^\(([^)]+)\)/g,  "^{$1}");
+    t = t.replace(/\^(\d+)([+-])/g,  "^{$1$2}");
+    t = t.replace(/\^([+-])(?!\d)/g, "^{$1}");
+    t = t.replace(/\^(\d+)/g,        "^{$1}");
     return t;
 }
 
@@ -145,115 +131,97 @@ function convertNotation(t) {
 const UNIT_RE = /\d+(?:\.\d+)?\s*(?:km\/h|m\/s|cm\/s|g\/cm³|kg\/m³|mol\/dm³|g\/dm³|g\/mol|°C|°F|cm²|m²|km²|cm³|m³|dm³|ml|l|cm|mm|m|km|kg|g|mg|Hz|dB|Nm|N|kJ|J|kW|W|kV|V|A|Ω|kPa|Pa|atm|N\/m²)/gi;
 const CURRENCY_RE = /\$[\d,.]+/g;
 
-/*  Chemical formula regex — shared by formatOption & Phase 4
-    Key: \([A-Z][^)]*\) only matches parens starting with an
-    element symbol, NOT English like "(a double bond)".        */
 const CHEM_RE = /((?:[A-Z][a-z]?(?:_{\d+})?|\([A-Z][^)]*\)(?:_{\d+}|\^\{[^}]+\}|\^[+-])?)+(?:\^\{[^}]+\}|\^[+-])?)/g;
 
 function formatOption(raw) {
     let t = raw.trim(), vault = [];
-    t = t.replace(UNIT_RE,     m => { vault.push(m); return `§V${vault.length-1}§`; });
-    t = t.replace(CURRENCY_RE, m => { vault.push(m); return `§V${vault.length-1}§`; });
+    t = t.replace(UNIT_RE,     m => { vault.push(m); return "\u00A7V" + (vault.length - 1) + "\u00A7"; });
+    t = t.replace(CURRENCY_RE, m => { vault.push(m); return "\u00A7V" + (vault.length - 1) + "\u00A7"; });
     t = convertNotation(t);
-
     if (/\\frac|\\sqrt|\^{|\_{|=/.test(t)) {
-        /* Detect English words (3+ lowercase) after removing element symbols */
-        const hasWords = /\b[a-z]{3,}\b/i.test(t.replace(/[A-Z][a-z]?/g, " "));
-
+        var cleaned = t.replace(/[A-Z][a-z]?/g, " ");
+        var hasWords = /\b[a-z]{3,}\b/i.test(cleaned);
         if (hasWords) {
-            /* Mixed text + formula: wrap ONLY formula segments */
-            t = t.replace(CHEM_RE, m =>
-                /_{|\^{/.test(m) ? `\\(${m}\\)` : m
-            );
+            t = t.replace(CHEM_RE, function(m) {
+                return /_{|\^{/.test(m) ? "\\(" + m + "\\)" : m;
+            });
         } else {
-            /* Pure formula / math: wrap the whole thing */
-            t = `\\(${t}\\)`;
+            t = "\\(" + t + "\\)";
         }
     }
-
-    return t.replace(/§V(\d+)§/g, (_, i) => vault[+i]);
+    return t.replace(/\u00A7V(\d+)\u00A7/g, function(_, i) { return vault[+i]; });
 }
 
 function formatQuestionText(raw) {
     let t = raw, vault = [];
-
-    /* Phase 1 — stash currency & units */
-    t = t.replace(CURRENCY_RE, m => { vault.push(m); return `§V${vault.length-1}§`; });
-    t = t.replace(UNIT_RE,     m => { vault.push(m); return `§V${vault.length-1}§`; });
-
-    /* Phase 2 — convert notation */
+    t = t.replace(CURRENCY_RE, m => { vault.push(m); return "\u00A7V" + (vault.length - 1) + "\u00A7"; });
+    t = t.replace(UNIT_RE,     m => { vault.push(m); return "\u00A7V" + (vault.length - 1) + "\u00A7"; });
     t = convertNotation(t);
-
-    /* Phase 3 — wrap short math expression after colon
-       Guards: skip if commas (list) or 2+ English words     */
-    t = t.replace(/(:\s*)([^:]+?)(?=\s*[.!?]|$)/g, (m, colon, expr) => {
+    t = t.replace(/(:\s*)([^:]+?)(?=\s*[.!?]|$)/g, function(m, colon, expr) {
         expr = expr.trim();
         if (!(/[a-z]/i.test(expr) && /[+\-*/=^_{\\]/.test(expr))) return m;
-        if (/,/.test(expr)) return m;                       // list → skip
-        const words = expr
-            .replace(/[A-Z][a-z]?/g, " ")                   // strip elements
-            .replace(/[_^{}\\()\d,.\s+\-*/=]/g, " ")        // strip notation
-            .trim().split(/\s+/).filter(w => w.length >= 2);
-        if (words.length > 1) return m;                     // wordy → skip
-        return colon + `\\(${expr}\\)`;
+        if (/,/.test(expr)) return m;
+        var words = expr.replace(/[A-Z][a-z]?/g, " ")
+            .replace(/[_^{}\\()\d,.\s+\-*/=]/g, " ")
+            .trim().split(/\s+/).filter(function(w) { return w.length >= 2; });
+        if (words.length > 1) return m;
+        return colon + "\\(" + expr + "\\)";
     });
-
-    /* Phase 4 — chemistry formulas
-       CHEM_RE only matches parens starting with [A-Z],
-       so "(a double bond)" is never grabbed.                 */
-    t = t.replace(CHEM_RE, (m, offset, str) => {
+    t = t.replace(CHEM_RE, function(m, offset, str) {
         if (!/_{|\^{/.test(m)) return m;
-        const before = str.substring(Math.max(0, offset - 2), offset);
-        if (before.endsWith("\\(")) return m;               // already wrapped
-        return `\\(${m}\\)`;
+        var before = str.substring(Math.max(0, offset - 2), offset);
+        if (before.endsWith("\\(")) return m;
+        return "\\(" + m + "\\)";
     });
-
-    /* Phase 5 — standalone math variables */
     t = t.replace(/(?<![a-zA-Z\\])([xyz])(?![a-zA-Z_{])/g, "\\($1\\)");
-
-    /* Phase 6 — restore vault */
-    t = t.replace(/§V(\d+)§/g, (_, i) => vault[+i]);
+    t = t.replace(/\u00A7V(\d+)\u00A7/g, function(_, i) { return vault[+i]; });
     return t;
 }
 
-/* ── Schema helpers ─────────────────────────────────────── */
+/* ── Schema ─────────────────────────────────────────────── */
 
 function findByKeys(obj, keys) {
     if (!obj || !keys) return undefined;
-    for (const k of keys) if (obj[k] !== undefined) return obj[k];
+    for (var i = 0; i < keys.length; i++) {
+        if (obj[keys[i]] !== undefined) return obj[keys[i]];
+    }
     return undefined;
 }
 
 function normaliseWorksheet(raw) {
-    const w = SCHEMA.worksheet, q = SCHEMA.question;
+    var w = SCHEMA.worksheet, q = SCHEMA.question;
     return {
         title:     findByKeys(raw, w.title) || "Untitled",
         image:     findByKeys(raw, w.image) || "",
         randomise: raw.randomise !== false,
-        questions: (findByKeys(raw, w.questions) || []).map(qs => ({
-            text:    findByKeys(qs, q.text)    || "",
-            options: findByKeys(qs, q.options) || [],
-            answer:  findByKeys(qs, q.answer)
-        }))
+        questions: (findByKeys(raw, w.questions) || []).map(function(qs) {
+            return {
+                text:    findByKeys(qs, q.text)    || "",
+                options: findByKeys(qs, q.options) || [],
+                answer:  findByKeys(qs, q.answer)
+            };
+        })
     };
 }
 
-/* ── GitHub fetch ───────────────────────────────────────── */
+/* ── Fetch ──────────────────────────────────────────────── */
 
 function rawUrl(p) {
-    return `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/${GH_BRANCH}/${p}`;
+    return "https://raw.githubusercontent.com/" + GH_USER + "/" + GH_REPO + "/" + GH_BRANCH + "/" + p;
 }
+
 async function fetchJSON(p) {
-    const u = rawUrl(p); log("Fetch:", u);
-    const r = await fetch(u);
-    if (!r.ok) throw new Error(`HTTP ${r.status}: ${u}`);
+    var u = rawUrl(p);
+    log("Fetch:", u);
+    var r = await fetch(u);
+    if (!r.ok) throw new Error("HTTP " + r.status + ": " + u);
     return r.json();
 }
 
 /* ── Screens ────────────────────────────────────────────── */
 
 function showScreen(id) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".screen").forEach(function(s) { s.classList.remove("active"); });
     $(id).classList.add("active");
 }
 
@@ -262,24 +230,25 @@ function showScreen(id) {
 async function loadIndex() {
     showScreen("launcher-screen");
     try {
-        const list = await fetchJSON(`${Q_PATH}/${INDEX_FILE}`);
+        var list = await fetchJSON(Q_PATH + "/" + INDEX_FILE);
         buildLauncher(list);
     } catch (e) {
         log("Index error:", e);
-        const el = $("launcher-error");
+        var el = $("launcher-error");
         if (el) { el.textContent = "Could not load worksheet list."; el.style.display = "block"; }
     }
 }
 
 function buildLauncher(list) {
-    const c = $("worksheet-list"); c.innerHTML = "";
-    list.forEach(item => {
-        const d = document.createElement("div");
+    var c = $("worksheet-list");
+    c.innerHTML = "";
+    list.forEach(function(item) {
+        var d = document.createElement("div");
         d.className = "ws-card";
-        d.innerHTML = `<span class="ws-icon">${item.icon||"📝"}</span>
-            <div class="ws-info"><h3>${item.title}</h3>
-            <p>${item.subject||""} · ${item.topic||""} · ${item.questionCount||"?"} Qs</p></div>`;
-        d.onclick = () => launchGame(item.file);
+        d.innerHTML = '<span class="ws-icon">' + (item.icon || "\uD83D\uDCDD") + '</span>'
+            + '<div class="ws-info"><h3>' + item.title + '</h3>'
+            + '<p>' + (item.subject || "") + ' \u00B7 ' + (item.topic || "") + ' \u00B7 ' + (item.questionCount || "?") + ' Qs</p></div>';
+        d.onclick = function() { launchGame(item.file); };
         c.appendChild(d);
     });
 }
@@ -290,15 +259,19 @@ async function launchGame(fp) {
     currentFile = fp;
     showScreen("game-screen");
     try {
-        ws = normaliseWorksheet(await fetchJSON(`${Q_PATH}/${fp}`));
+        var data = await fetchJSON(Q_PATH + "/" + fp);
+        ws = normaliseWorksheet(data);
         if (ws.randomise) shuffle(ws.questions);
-        qIdx = 0; score = 0; answered = new Set(); totalQ = ws.questions.length;
+        qIdx = 0;
+        score = 0;
+        answered = new Set();
+        totalQ = ws.questions.length;
 
         $("worksheet-title").textContent = ws.title;
 
-        const img = $("reveal-image");
-        const imgUrl = ws.image
-            ? (ws.image.startsWith("http") ? ws.image : rawUrl(ws.image))
+        var img = $("reveal-image");
+        var imgUrl = ws.image
+            ? (ws.image.indexOf("http") === 0 ? ws.image : rawUrl(ws.image))
             : "";
         img.src = imgUrl;
         img.style.display = "none";
@@ -307,80 +280,88 @@ async function launchGame(fp) {
         showQuestion();
     } catch (e) {
         log("Launch error:", e);
-        alert("Could not load worksheet."); loadIndex();
+        alert("Could not load worksheet.");
+        loadIndex();
     }
 }
 
-/* ── Grid / Tiles ───────────────────────────────────────── */
+/* ── Grid ───────────────────────────────────────────────── */
 
 function buildGrid() {
-    const g = $("grid-overlay"); g.innerHTML = "";
-    const cols = 4, rows = 3, n = cols * rows;
-    g.style.gridTemplateColumns = `repeat(${cols},1fr)`;
-    g.style.gridTemplateRows    = `repeat(${rows},1fr)`;
-    for (let i = 0; i < n; i++) {
-        const t = document.createElement("div");
-        t.className = "tile"; t.dataset.i = i;
+    var g = $("grid-overlay");
+    g.innerHTML = "";
+    var cols = 4, rows = 3, n = cols * rows;
+    g.style.gridTemplateColumns = "repeat(" + cols + ",1fr)";
+    g.style.gridTemplateRows    = "repeat(" + rows + ",1fr)";
+    for (var i = 0; i < n; i++) {
+        var t = document.createElement("div");
+        t.className = "tile";
+        t.dataset.i = i;
         g.appendChild(t);
     }
     $("reveal-image").style.display = "block";
 }
 
-const covered  = () => [...document.querySelectorAll(".tile:not(.revealed)")];
-const revealed = () => [...document.querySelectorAll(".tile.revealed")];
+function covered()  { return Array.from(document.querySelectorAll(".tile:not(.revealed)")); }
+function revealed() { return Array.from(document.querySelectorAll(".tile.revealed")); }
 
 function removeTile() {
-    const c = covered(); if (!c.length) return false;
+    var c = covered();
+    if (!c.length) return false;
     c[Math.floor(Math.random() * c.length)].classList.add("revealed");
     return true;
 }
+
 function restoreTile() {
-    const r = revealed(); if (!r.length) return false;
+    var r = revealed();
+    if (!r.length) return false;
     r[Math.floor(Math.random() * r.length)].classList.remove("revealed");
     return true;
 }
 
 function glitchPeek() {
-    const tiles = covered();
-    tiles.forEach(t => t.classList.add("glitch"));
-    setTimeout(() => tiles.forEach(t => t.classList.remove("glitch")), 800);
+    var tiles = covered();
+    tiles.forEach(function(t) { t.classList.add("glitch"); });
+    setTimeout(function() {
+        tiles.forEach(function(t) { t.classList.remove("glitch"); });
+    }, 800);
 }
 
 /* ── Questions ──────────────────────────────────────────── */
 
 function showQuestion() {
     if (qIdx >= totalQ) { showEnd(); return; }
-    const q = ws.questions[qIdx];
-
+    var q = ws.questions[qIdx];
     $("question-text").innerHTML = formatQuestionText(q.text);
 
-    const order = q.options.map((_, i) => i);
+    var order = q.options.map(function(_, i) { return i; });
     if (SHUFFLE_OPT) shuffle(order);
 
-    const box = $("options-container"); box.innerHTML = "";
-    order.forEach(oi => {
-        const b = document.createElement("button");
+    var box = $("options-container");
+    box.innerHTML = "";
+    order.forEach(function(oi) {
+        var b = document.createElement("button");
         b.className = "option-btn";
         b.dataset.oi = oi;
         b.innerHTML = formatOption(q.options[oi]);
-        b.onclick = () => handleAnswer(b, oi);
+        b.onclick = function() { handleAnswer(b, oi); };
         box.appendChild(b);
     });
 
-    $("progress-tracker").textContent = `Q${qIdx + 1} / ${totalQ}`;
+    $("progress-tracker").textContent = "Q" + (qIdx + 1) + " / " + totalQ;
 
-    if (window.MathJax && MathJax.typesetPromise)
-        MathJax.typesetPromise([$("question-text"), box]).catch(e => log("MJ:", e));
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([$("question-text"), box]).catch(function(e) { log("MJ:", e); });
+    }
 }
 
 async function handleAnswer(btn, chosen) {
     if (answered.has(qIdx)) return;
     answered.add(qIdx);
+    var q = ws.questions[qIdx];
+    var ok = chosen === q.answer;
 
-    const q = ws.questions[qIdx];
-    const ok = chosen === q.answer;
-
-    document.querySelectorAll(".option-btn").forEach(b => {
+    document.querySelectorAll(".option-btn").forEach(function(b) {
         b.disabled = true;
         if (+b.dataset.oi === q.answer) b.classList.add("correct");
     });
@@ -394,10 +375,10 @@ async function handleAnswer(btn, chosen) {
         btn.classList.add("wrong");
         glitchPeek();
         await delay(DEL_BAD);
-        if (GAMBLE_ON && covered().length > 0 && revealed().length >= G_PENALTY)
+        if (GAMBLE_ON && covered().length > 0 && revealed().length >= G_PENALTY) {
             await showGamble();
+        }
     }
-
     qIdx++;
     showQuestion();
 }
@@ -405,53 +386,58 @@ async function handleAnswer(btn, chosen) {
 /* ── Gamble ─────────────────────────────────────────────── */
 
 function showGamble() {
-    return new Promise(resolve => {
-        const slot = $("gamble-slot");
-        slot.innerHTML = `<p>🎲 Gamble? Risk ${G_PENALTY} tile(s) for a chance to gain ${G_REWARD}!</p>
-            <button id="gamble-yes">Yes!</button> <button id="gamble-no">No</button>`;
+    return new Promise(function(resolve) {
+        var slot = $("gamble-slot");
+        slot.innerHTML = '<p>\uD83C\uDFB2 Gamble? Risk ' + G_PENALTY + ' tile(s) for a chance to gain ' + G_REWARD + '!</p>'
+            + '<button id="gamble-yes">Yes!</button> <button id="gamble-no">No</button>';
         slot.style.display = "block";
-
-        $("gamble-yes").onclick = () => {
+        $("gamble-yes").onclick = function() {
             slot.style.display = "none";
-            const win = Math.random() < 0.5;
+            var win = Math.random() < 0.5;
             if (win) {
-                for (let i = 0; i < G_REWARD; i++) removeTile();
-                showToast(`🎉 Won ${G_REWARD} tiles!`);
+                for (var i = 0; i < G_REWARD; i++) removeTile();
+                showToast("\uD83C\uDF89 Won " + G_REWARD + " tiles!");
             } else {
-                for (let i = 0; i < G_PENALTY; i++) restoreTile();
-                showToast(`😬 Lost ${G_PENALTY} tile(s)!`);
+                for (var j = 0; j < G_PENALTY; j++) restoreTile();
+                showToast("\uD83D\uDE2C Lost " + G_PENALTY + " tile(s)!");
             }
             resolve();
         };
-        $("gamble-no").onclick = () => { slot.style.display = "none"; resolve(); };
+        $("gamble-no").onclick = function() { slot.style.display = "none"; resolve(); };
     });
 }
 
 function showToast(msg) {
-    const t = $("toast"); if (!t) return;
-    t.textContent = msg; t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 2000);
+    var t = $("toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function() { t.classList.remove("show"); }, 2000);
 }
 
-/* ── End screen ─────────────────────────────────────────── */
+/* ── End ────────────────────────────────────────────────── */
 
 function showEnd() {
-    const pct = score / totalQ;
-    const won = pct >= WIN_THRESH;
-
+    var pct = score / totalQ;
+    var won = pct >= WIN_THRESH;
     $("end-overlay").classList.add("active");
-    $("end-title").textContent   = won ? "🎉 Amazing!" : "😅 Not quite!";
-    $("end-message").textContent = `You scored ${score}/${totalQ} (${Math.round(pct*100)}%). `
-        + (won ? "Image unlocked!" : `Need ${Math.round(WIN_THRESH*100)}% to unlock. Try again!`);
-
+    $("end-title").textContent = won ? "\uD83C\uDF89 Amazing!" : "\uD83D\uDE05 Not quite!";
+    $("end-message").textContent = "You scored " + score + "/" + totalQ + " (" + Math.round(pct * 100) + "%). "
+        + (won ? "Image unlocked!" : "Need " + Math.round(WIN_THRESH * 100) + "% to unlock. Try again!");
     if (won) cascadeReveal();
-
-    $("retry-btn").onclick     = retryGame;
-    $("end-back-btn").onclick  = () => { $("end-overlay").classList.remove("active"); loadIndex(); };
+    $("retry-btn").onclick = retryGame;
+    $("end-back-btn").onclick = function() {
+        $("end-overlay").classList.remove("active");
+        loadIndex();
+    };
 }
 
 async function cascadeReveal() {
-    for (const t of covered()) { t.classList.add("revealed"); await delay(150); }
+    var tiles = covered();
+    for (var i = 0; i < tiles.length; i++) {
+        tiles[i].classList.add("revealed");
+        await delay(150);
+    }
 }
 
 /* ── Retry ──────────────────────────────────────────────── */
@@ -463,13 +449,14 @@ function retryGame() {
 
 /* ── Init ───────────────────────────────────────────────── */
 
-document.addEventListener("DOMContentLoaded", () => {
-    const retry = sessionStorage.getItem("mgr_retry");
+document.addEventListener("DOMContentLoaded", function() {
+    var retry = sessionStorage.getItem("mgr_retry");
     if (retry) { sessionStorage.removeItem("mgr_retry"); launchGame(retry); }
     else loadIndex();
-
-    const bb = $("back-btn");
-    if (bb) bb.onclick = () => { if (confirm("Leave? Progress will be lost.")) loadIndex(); };
+    var bb = $("back-btn");
+    if (bb) bb.onclick = function() {
+        if (confirm("Leave? Progress will be lost.")) loadIndex();
+    };
 });
 
 })();
