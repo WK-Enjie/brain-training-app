@@ -1,0 +1,126 @@
+{
+    "worksheetTitle": "Chemistry: Moles, Gas Volumes & Concentration (Set 1)",
+    "revealImageUrl": "https://raw.githubusercontent.com/WK-Enjie/brain-training-app/main/images/cute-1.jpg",
+    "questions": [
+        {
+            "qText": "Calculate the number of moles present in 24.0 g of magnesium (Mg).",
+            "options": ["2.00 mol", "0.50 mol", "24.0 mol", "1.00 mol"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Calculate the mass, in grams, of 0.25 moles of carbon dioxide (CO2).",
+            "options": ["44.0 g", "11.0 g", "22.0 g", "5.5 g"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "A student weighs out 17.0 g of ammonia (NH3). Calculate the number of moles of NH3 used.",
+            "options": ["0.50 mol", "17.0 mol", "1.00 mol", "2.00 mol"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "What is the mass of 1.50 moles of sodium hydroxide (NaOH)?",
+            "options": ["80.0 g", "60.0 g", "20.0 g", "40.0 g"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Calculate the number of moles of oxygen atoms present in 8.0 g of sulfur trioxide (SO3).",
+            "options": ["0.20 mol", "0.30 mol", "0.10 mol", "0.40 mol"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "A sample of an unknown gas has a mass of 4.4 g and contains exactly 0.10 moles. Calculate its relative molecular mass (Mr) and suggest its identity.",
+            "options": ["32.0, O2", "16.0, CH4", "44.0, CO2", "28.0, N2"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A student requires 0.050 moles of hydrated magnesium sulfate (MgSO4·7H2O). Calculate the exact mass of the hydrated crystals needed.",
+            "options": ["6.0 g", "24.6 g", "120.0 g", "12.3 g"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "2.00 g of a Group 2 metal oxide (XO) contains 0.050 moles of the compound. Calculate the relative atomic mass (Ar) of the Group 2 metal X, and identify the metal.",
+            "options": ["65.0, Zinc", "9.0, Beryllium", "40.0, Calcium", "24.0, Magnesium"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Calculate the volume, in dm³, occupied by 0.75 moles of nitrogen gas (N2) at room temperature and pressure (r.t.p.).",
+            "options": ["24.0 dm³", "12.0 dm³", "32.0 dm³", "18.0 dm³"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "A gas syringe collects 6.0 dm³ of chlorine gas (Cl2) at r.t.p. Calculate the number of moles of chlorine gas collected.",
+            "options": ["2.40 mol", "0.25 mol", "0.50 mol", "0.10 mol"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "What is the volume, in cm³, of 0.015 moles of hydrogen gas (H2) at r.t.p.?",
+            "options": ["360 cm³", "240 cm³", "15 cm³", "150 cm³"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Calculate the mass of 2.4 dm³ of methane (CH4) gas at r.t.p.",
+            "options": ["1.6 g", "3.2 g", "16.0 g", "0.16 g"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Flask A contains 0.2 g of hydrogen gas (H2) and Flask B contains 1.6 g of methane gas (CH4). Both are at r.t.p. Determine which flask contains the larger volume of gas.",
+            "options": ["Both are equal", "Cannot be determined", "Flask B", "Flask A"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "0.20 mol of solid calcium carbonate (CaCO3) is heated strongly until it completely decomposes. Calculate the maximum volume of carbon dioxide gas produced at r.t.p.",
+            "options": ["0.20 dm³", "24.0 dm³", "2.4 dm³", "4.8 dm³"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "A student vaporizes a volatile liquid and collects 120 cm³ of its gas at r.t.p. If the mass of the gas collected is 0.30 g, calculate the relative molecular mass (Mr) of the volatile liquid.",
+            "options": ["44", "120", "60", "30"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A gas mixture contains 0.05 mol of oxygen (O2) and 0.15 mol of nitrogen (N2). Calculate the total volume, in dm³, of this gas mixture at r.t.p.",
+            "options": ["9.6 dm³", "4.8 dm³", "2.4 dm³", "1.2 dm³"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Calculate the concentration, in mol/dm³, of a solution containing 0.10 moles of sodium chloride (NaCl) dissolved in 0.25 dm³ of water.",
+            "options": ["0.25 mol/dm³", "0.10 mol/dm³", "0.40 mol/dm³", "2.50 mol/dm³"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A solution of nitric acid has a concentration of 0.20 mol/dm³. Calculate the number of moles of HNO3 present in 500 cm³ of this solution.",
+            "options": ["0.05 mol", "1.00 mol", "0.20 mol", "0.10 mol"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "8.0 g of solid sodium hydroxide (NaOH) is dissolved in water to make exactly 500 cm³ of solution. Calculate the concentration of the solution in mol/dm³.",
+            "options": ["0.20 mol/dm³", "0.80 mol/dm³", "1.60 mol/dm³", "0.40 mol/dm³"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Convert a concentration of 0.25 mol/dm³ of nitric acid (HNO3) into g/dm³.",
+            "options": ["6.30 g/dm³", "63.0 g/dm³", "15.75 g/dm³", "25.0 g/dm³"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A commercial bottle of aqueous hydrochloric acid has a label stating its concentration is 7.3 g/dm³. Calculate its concentration in mol/dm³.",
+            "options": ["0.20 mol/dm³", "0.36 mol/dm³", "7.30 mol/dm³", "0.10 mol/dm³"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "A student needs to prepare 500 cm³ of a 0.20 mol/dm³ aqueous sodium chloride (NaCl) standard solution. Calculate the exact mass of solid NaCl the student must weigh out.",
+            "options": ["11.70 g", "5.85 g", "58.5 g", "2.92 g"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "In a titration, 20.0 cm³ of 0.15 mol/dm³ potassium hydroxide (KOH) is completely neutralized by 30.0 cm³ of sulfuric acid (H2SO4). Assuming a 2:1 molar ratio (KOH:H2SO4), calculate the concentration of the H2SO4 in mol/dm³.",
+            "options": ["0.10 mol/dm³", "0.050 mol/dm³", "0.025 mol/dm³", "0.15 mol/dm³"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "25.0 cm³ of a 1.0 mol/dm³ copper(II) sulfate solution is transferred to a volumetric flask, and distilled water is added until the total volume reaches 250 cm³. Calculate the new concentration of the diluted solution in mol/dm³.",
+            "options": ["1.0 mol/dm³", "0.10 mol/dm³", "0.01 mol/dm³", "0.25 mol/dm³"],
+            "correctIndex": 1
+        }
+    ]
+}
