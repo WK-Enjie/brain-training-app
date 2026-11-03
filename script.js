@@ -301,7 +301,7 @@ async function launchGame(fp) {
             ? (ws.image.startsWith("http") ? ws.image : rawUrl(ws.image))
             : "";
         img.src = imgUrl;
-        img.style.display = imgUrl ? "block" : "none";
+        img.style.display = "none";
 
         buildGrid();
         showQuestion();
@@ -323,6 +323,7 @@ function buildGrid() {
         t.className = "tile"; t.dataset.i = i;
         g.appendChild(t);
     }
+    $("reveal-image").style.display = "block";
 }
 
 const covered  = () => [...document.querySelectorAll(".tile:not(.revealed)")];
