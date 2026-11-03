@@ -95,14 +95,9 @@ function convertFractions(t) {
 /* ── Powers: ^3, ^-3, ^(1/3), ^{2+}, ^+, ^- ── */
 function convertPowers(t) {
     if (!t) return t;
-    // Already-braced ^{...} — leave alone
-    // ^-digits → ^{-digits}
     t = t.replace(/\^-(\d+)/g, '^{-$1}');
-    // ^(expr) → ^{expr}
     t = t.replace(/\^\(([^)]+)\)/g, '^{$1}');
-    // Lone ^+ or ^- (ion charges)
     t = t.replace(/\^([+\-])(?![{\d])/g, '^{$1}');
-    // ^digits → ^{digits}
     t = t.replace(/\^(\d+)/g, '^{$1}');
     return t;
 }
@@ -133,14 +128,21 @@ function formatOption(raw) {
 
     t = convertNotation(t);
 
-    // Wrap in MathJax only if it contains actual math notation
-    const hasLatex    = /\\frac|\\sqrt|\^\{|_\{/.test(t);
-    const hasEquation = /=/.test(t);
+    // FIX: Safely wrap ONLY the math/chemistry parts, keeping English text normal
+    t = t.replace(/([a-zA-Z0-9()[\]{}+-\\]*(?:_\{|\^\{|\\frac\{)[a-zA-Z0-9()[\]{}+-\\]*)/g, (m, _, offset, str) => {
+        const before = str.substring(0, offset);
+        const opens  = (before.match(/\\\(/g) || []).length;
+        const closes = (before.match(/\\\)/g) || []).length;
+        if (opens > closes) return m; 
+        return '\\(' + m + '\\)';
+    });
 
-    if (hasLatex || hasEquation) {
-        // Split: wrap only the math part, keep plain text outside
-        // Simple strategy: wrap whole thing — MathJax \text{} not needed for short options
-        t = '\\(' + t.trim() + '\\)';
+    // Handle pure equation options like "x = 5" safely
+    if (/=/.test(t) && !/\\\(/.test(t)) {
+        // Only wrap if it doesn't look like an English sentence
+        if (!/[a-zA-Z]{3,}/.test(t)) {
+            t = '\\(' + t.trim() + '\\)';
+        }
     }
 
     return t + unit;
@@ -176,7 +178,6 @@ function formatQuestionText(raw) {
     }
 
     /* Phase 4: Wrap chemistry formulas and inline math safely */
-    // Targets any contiguous string containing subscripts (_{), superscripts (^{), or fractions (\frac{)
     t = t.replace(/([a-zA-Z0-9()[\]{}+-\\]*(?:_\{|\^\{|\\frac\{)[a-zA-Z0-9()[\]{}+-\\]*)/g, (m, _, offset, str) => {
         const before = str.substring(0, offset);
         const opens  = (before.match(/\\\(/g) || []).length;
