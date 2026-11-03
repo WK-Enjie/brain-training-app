@@ -40,11 +40,11 @@
         "file": "secondary/upper/chemistry/matter-atoms-bonding-01.json"
     },
     {
-        "title": "Moles, Gas Volumes & Concentration",
-        "icon": "⚖️",
-        "subject": "Upper Sec Chemistry",
-        "topic": "The Mole Concept",
-        "questionCount": 24,
-        "file": "secondary/upper/chemistry/mol-vol-conc-01.json"
-    }
+    "title": "Moles, Gas Volumes & Concentration (Part 1)",
+    "icon": "⚖️",
+    "subject": "Upper Sec Chemistry",
+    "topic": "The Mole Concept",
+    "questionCount": 24,
+    "file": "secondary/upper/chemistry/mol-vol-conc-01.json"
+}
 ]
