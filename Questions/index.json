@@ -38,5 +38,13 @@
         "topic": "Atomic Structure & Bonding",
         "questionCount": 18,
         "file": "secondary/upper/chemistry/matter-atoms-bonding-01.json"
+    },
+    {
+        "title": "Moles, Gas Volumes & Concentration",
+        "icon": "⚖️",
+        "subject": "Upper Sec Chemistry",
+        "topic": "The Mole Concept",
+        "questionCount": 24,
+        "file": "secondary/upper/chemistry/moles-gas-concentration-01.json"
     }
 ]
