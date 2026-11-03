@@ -162,10 +162,10 @@ function formatQuestionText(raw) {
     t = t.replace(/\d+-(?:question|mark|item|year|minute|hour)/gi, save);
     t = t.replace(/(\))\s+(cm|mm|m|km|kg|g)\b/gi, (_, p, u) => p + save(' ' + u));
 
-    /* Phase 2: Convert notation */
+    /* Phase 2: Convert notation (Fractions, Powers, Subscripts) */
     t = convertNotation(t);
 
-    /* Phase 3: Wrap math zones */
+    /* Phase 3: Wrap math zones after a colon (e.g., "Solve: x + 2 = 5") */
     const colonIdx = t.lastIndexOf(':');
     if (colonIdx > 5 && colonIdx < t.length - 3) {
         const prefix   = t.substring(0, colonIdx + 1);
@@ -173,21 +173,15 @@ function formatQuestionText(raw) {
         if (mathPart && /[a-z\\]/i.test(mathPart)) {
             t = prefix + ' \\(' + mathPart + '\\)';
         }
-    } else {
-        // Wrap parenthesised expressions with variables or math notation
-        t = t.replace(/\(([^)]*[a-z][^)]*)\)/gi, m => {
-            return '\\(' + m + '\\)';
-        });
     }
 
-    /* Phase 4: Wrap chemistry formulas outside parens (e.g. "Al_2(SO_4)_3" at top level) */
-    // Match sequences like X_2, X^+, X_2Y_3 — identifiers with subscripts/superscripts
-    t = t.replace(/([A-Z][a-z]?(?:_\{[^}]+\}|\^\{[^}]+\})(?:[A-Z][a-z]?(?:_\{[^}]+\}|\^\{[^}]+\})?)*)/g, (m, _, offset, str) => {
-        // Skip if already inside \(...\)
+    /* Phase 4: Wrap chemistry formulas and inline math safely */
+    // Targets any contiguous string containing subscripts (_{), superscripts (^{), or fractions (\frac{)
+    t = t.replace(/([a-zA-Z0-9()[\]{}+-\\]*(?:_\{|\^\{|\\frac\{)[a-zA-Z0-9()[\]{}+-\\]*)/g, (m, _, offset, str) => {
         const before = str.substring(0, offset);
         const opens  = (before.match(/\\\(/g) || []).length;
         const closes = (before.match(/\\\)/g) || []).length;
-        if (opens > closes) return m;
+        if (opens > closes) return m; // Skipped if already inside \( \)
         return '\\(' + m + '\\)';
     });
 
