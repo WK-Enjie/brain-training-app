@@ -1,8 +1,9 @@
 /* ============================================================
-   MYSTERY GRID REVEAL — script.js v7.6.1
+   MYSTERY GRID REVEAL — script.js v7.6.2
    Fixes: 1) Q_PATH prefix for worksheet fetch
-          2) Trailing subscripts after ) in chemistry
-          3) Mixed English + formula options no longer cursive
+          2) Chemical parens only match element symbols, not English
+          3) Phase 3 no longer wraps comma-lists or wordy text
+          4) Multi-element formulas (H2SO4, CO2) wrap as one unit
    ============================================================ */
 (() => {
 "use strict";
@@ -144,6 +145,11 @@ function convertNotation(t) {
 const UNIT_RE = /\d+(?:\.\d+)?\s*(?:km\/h|m\/s|cm\/s|g\/cm³|kg\/m³|mol\/dm³|g\/dm³|g\/mol|°C|°F|cm²|m²|km²|cm³|m³|dm³|ml|l|cm|mm|m|km|kg|g|mg|Hz|dB|Nm|N|kJ|J|kW|W|kV|V|A|Ω|kPa|Pa|atm|N\/m²)/gi;
 const CURRENCY_RE = /\$[\d,.]+/g;
 
+/*  Chemical formula regex — shared by formatOption & Phase 4
+    Key: \([A-Z][^)]*\) only matches parens starting with an
+    element symbol, NOT English like "(a double bond)".        */
+const CHEM_RE = /((?:[A-Z][a-z]?(?:_{\d+})?|\([A-Z][^)]*\)(?:_{\d+}|\^\{[^}]+\}|\^[+-])?)+(?:\^\{[^}]+\}|\^[+-])?)/g;
+
 function formatOption(raw) {
     let t = raw.trim(), vault = [];
     t = t.replace(UNIT_RE,     m => { vault.push(m); return `§V${vault.length-1}§`; });
@@ -151,13 +157,16 @@ function formatOption(raw) {
     t = convertNotation(t);
 
     if (/\\frac|\\sqrt|\^{|\_{|=/.test(t)) {
+        /* Detect English words (3+ lowercase) after removing element symbols */
         const hasWords = /\b[a-z]{3,}\b/i.test(t.replace(/[A-Z][a-z]?/g, " "));
+
         if (hasWords) {
-            t = t.replace(
-                /([A-Z][a-z]?(?:_{\d+})?(?:\([^)]+\)(?:_{\d+}|\^\{[^}]+\}|\^[+-])?)*(?:\^\{[^}]+\}|\^[+-])?)/g,
-                m => /_{|\^{/.test(m) ? `\\(${m}\\)` : m
+            /* Mixed text + formula: wrap ONLY formula segments */
+            t = t.replace(CHEM_RE, m =>
+                /_{|\^{/.test(m) ? `\\(${m}\\)` : m
             );
         } else {
+            /* Pure formula / math: wrap the whole thing */
             t = `\\(${t}\\)`;
         }
     }
@@ -168,30 +177,41 @@ function formatOption(raw) {
 function formatQuestionText(raw) {
     let t = raw, vault = [];
 
+    /* Phase 1 — stash currency & units */
     t = t.replace(CURRENCY_RE, m => { vault.push(m); return `§V${vault.length-1}§`; });
     t = t.replace(UNIT_RE,     m => { vault.push(m); return `§V${vault.length-1}§`; });
 
+    /* Phase 2 — convert notation */
     t = convertNotation(t);
 
+    /* Phase 3 — wrap short math expression after colon
+       Guards: skip if commas (list) or 2+ English words     */
     t = t.replace(/(:\s*)([^:]+?)(?=\s*[.!?]|$)/g, (m, colon, expr) => {
         expr = expr.trim();
-        if (/[a-z]/i.test(expr) && /[+\-*/=^_{\\]/.test(expr))
-            return colon + `\\(${expr}\\)`;
-        return m;
+        if (!(/[a-z]/i.test(expr) && /[+\-*/=^_{\\]/.test(expr))) return m;
+        if (/,/.test(expr)) return m;                       // list → skip
+        const words = expr
+            .replace(/[A-Z][a-z]?/g, " ")                   // strip elements
+            .replace(/[_^{}\\()\d,.\s+\-*/=]/g, " ")        // strip notation
+            .trim().split(/\s+/).filter(w => w.length >= 2);
+        if (words.length > 1) return m;                     // wordy → skip
+        return colon + `\\(${expr}\\)`;
     });
 
-    t = t.replace(
-        /((?:[A-Z][a-z]?(?:_{\d+})?|\([^)]+\)(?:_{\d+}|\^\{[^}]+\}|\^[+-])?)+(?:\^\{[^}]+\}|\^[+-])?)/g,
-        (m, offset, str) => {
-            if (!/_{|\^{/.test(m)) return m;
-            const before = str.substring(Math.max(0, offset - 2), offset);
-            if (before.endsWith("\\(")) return m;
-            return `\\(${m}\\)`;
-        }
-    );
+    /* Phase 4 — chemistry formulas
+       CHEM_RE only matches parens starting with [A-Z],
+       so "(a double bond)" is never grabbed.                 */
+    t = t.replace(CHEM_RE, (m, offset, str) => {
+        if (!/_{|\^{/.test(m)) return m;
+        const before = str.substring(Math.max(0, offset - 2), offset);
+        if (before.endsWith("\\(")) return m;               // already wrapped
+        return `\\(${m}\\)`;
+    });
 
+    /* Phase 5 — standalone math variables */
     t = t.replace(/(?<![a-zA-Z\\])([xyz])(?![a-zA-Z_{])/g, "\\($1\\)");
 
+    /* Phase 6 — restore vault */
     t = t.replace(/§V(\d+)§/g, (_, i) => vault[+i]);
     return t;
 }
