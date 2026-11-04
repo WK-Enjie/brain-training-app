@@ -1,215 +1,125 @@
 {
-    "worksheetTitle": "Matter, Atoms, Isotopes & Bonding",
-    "revealImageUrl": "https://raw.githubusercontent.com/WK-Enjie/brain-training-app/main/images/singapore-3.jpg",
+    "worksheetTitle": "Atomic Structure, Electronic Configuration & Isotopes",
+    "revealImageUrl": "https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=1200",
     "questions": [
         {
-            "qText": "When a solid is heated and begins to melt, the temperature remains constant until all the solid has turned into a liquid. What is the thermal energy being used for during this time?",
-            "options": [
-                "Breaking the strong covalent bonds between the atoms.",
-                "Overcoming the attractive forces between the particles.",
-                "Increasing the kinetic energy of the particles.",
-                "Expanding the physical volume of the particles."
-            ],
-            "correctIndex": 1
-        },
-        {
-            "qText": "Carbon dioxide gas is pressurised and cooled to form liquid carbon dioxide for underground storage. How do the arrangement and movement of the molecules change during this physical process?",
-            "options": [
-                "Particles move closer and vibrate in fixed positions.",
-                "Particles move further apart and vibrate in fixed positions.",
-                "Particles move closer together and slide past one another.",
-                "Particles move further apart and move randomly at high speeds."
-            ],
+            "qText": "1. Where are the protons and neutrons strictly located within an atom?",
+            "options": ["Embedded within the electron cloud to neutralize repulsive forces.", "Orbiting the central core in fixed circular shells.", "Nucleus", "Randomly distributed throughout the empty space of the atom."],
             "correctIndex": 2
         },
         {
-            "qText": "Ammonia gas is less dense than air and highly soluble in water. Which method is most suitable for collecting a sample of ammonia gas in the laboratory?",
-            "options": [
-                "Upward delivery into an inverted gas jar.",
-                "Downward delivery into an upright gas jar.",
-                "Downward displacement of water in a trough.",
-                "Bubbling the gas through a neutral salt solution."
-            ],
+            "qText": "2. What is the relative electrical charge of an electron?",
+            "options": ["-1", "+1, because it carries positive electrical current.", "It varies depending on the isotope.", "0, as its mass is too small to carry a measurable charge."],
             "correctIndex": 0
         },
         {
-            "qText": "Chlorine gas is denser than air and slightly soluble in water. How should a sample of chlorine gas be collected?",
-            "options": [
-                "Upward delivery into an inverted gas jar.",
-                "Downward displacement of water in a trough.",
-                "Bubbling the gas through a neutral salt solution.",
-                "Downward delivery into an upright gas jar."
-            ],
+            "qText": "3. What is the correct definition of the nucleon number (mass number)?",
+            "options": ["The number of valence electrons in the outermost shell.", "The number of neutrons only.", "The total sum of protons, neutrons, and electrons.", "Protons plus neutrons."],
             "correctIndex": 3
         },
         {
-            "qText": "Hydrogen gas is insoluble in water and is the least dense gas. Which combination of methods can be used to collect it?",
-            "options": [
-                "Upward delivery or downward displacement of water.",
-                "Downward delivery or upward displacement of water.",
-                "Upward delivery or upward displacement of water.",
-                "Downward delivery or downward displacement of water."
-            ],
+            "qText": "4. What strictly defines the proton number (atomic number) of an element?",
+            "options": ["The total number of nucleons present in the central nucleus.", "The number of electron shells occupied by the atom.", "The sum of the positively charged protons and negatively charged electrons.", "Number of protons."],
+            "correctIndex": 3
+        },
+        {
+            "qText": "5. In a neutral atom, which two subatomic particles must always be equal in number?",
+            "options": ["Protons and electrons.", "Nucleon number and proton number.", "Protons and neutrons.", "Neutrons and electrons."],
             "correctIndex": 0
         },
         {
-            "qText": "A student collects a colourless gas in a test tube. Which test and result confirms the gas is oxygen?",
-            "options": [
-                "It bleaches damp litmus paper.",
-                "It relights a glowing splint.",
-                "It produces a white precipitate with limewater.",
-                "It makes a popping sound with a lighted splint."
-            ],
-            "correctIndex": 1
-        },
-        {
-            "qText": "Chlorine exists as two main isotopes Chlorine-35 and Chlorine-37. Which statement correctly defines why they are isotopes?",
-            "options": [
-                "Same number of protons and neutrons.",
-                "Different number of protons, same neutrons.",
-                "Same number of protons, different neutrons.",
-                "Different number of protons and neutrons."
-            ],
+            "qText": "6. Which subatomic particle has a relative mass of 1 and a relative charge of +1?",
+            "options": ["Neutron, because it balances electrostatic forces.", "Nucleon, which occasionally escapes during bonding.", "Proton", "Electron, assuming it is composed of positron materials."],
             "correctIndex": 2
         },
         {
-            "qText": "Which of the following ions has the exact same electronic configuration as an Argon atom (2,8,8)?",
-            "options": [
-                "Sodium ion (Na^+)",
-                "Magnesium ion (Mg^{2+})",
-                "Oxide ion (O^{2-})",
-                "Chloride ion (Cl^-)"
-            ],
-            "correctIndex": 3
-        },
-        {
-            "qText": "An ion X^{2+} contains 18 electrons and 20 neutrons. What is the nucleon number of element X?",
-            "options": ["20", "38", "40", "42"],
-            "correctIndex": 2
-        },
-        {
-            "qText": "Why is the relative atomic mass (Ar) of copper 63.5, rather than a whole number?",
-            "options": [
-                "The weighted average mass of its naturally occurring isotopes.",
-                "The mass of a single atom compared to a hydrogen atom.",
-                "The total number of protons and neutrons in its heaviest isotope.",
-                "The average mass of its atoms minus the mass of its electrons."
-            ],
+            "qText": "7. What is the overall electrical charge of the nucleus?",
+            "options": ["Positive", "Negative, because electrons overwhelm the protons.", "Neutral, because protons are canceled by neutrons.", "Zero, assuming it is devoid of charged particles."],
             "correctIndex": 0
         },
         {
-            "qText": "When a sodium atom (Na) forms a sodium ion (Na^+), what happens to its size and why?",
-            "options": [
-                "It increases because it gains an extra electron shell.",
-                "It decreases because it loses its outermost electron shell.",
-                "It increases because the protons repel each other strongly.",
-                "It remains the same because the nucleus does not change."
-            ],
+            "qText": "8. What is the electronic configuration of a neutral sodium atom (proton number 11)?",
+            "options": ["2, 8, 2, because sodium is an alkaline earth metal.", "2, 8, 1", "2, 9, assuming the second shell expands.", "2, 8, 8, allowing sodium to bypass the fourth shell."],
             "correctIndex": 1
         },
         {
-            "qText": "An atom of phosphorus has a proton number of 15 and a nucleon number of 31. What is the number of protons, neutrons, and electrons in a phosphide ion (P^{3-})?",
-            "options": [
-                "15 protons, 16 neutrons, 18 electrons.",
-                "15 protons, 16 neutrons, 15 electrons.",
-                "15 protons, 31 neutrons, 18 electrons.",
-                "12 protons, 16 neutrons, 18 electrons."
-            ],
+            "qText": "9. What is the maximum number of electrons that can fit into the first electron shell?",
+            "options": ["18, assuming it contains s, p, and d sub-orbitals.", "32, based on the formula 2n².", "8, because all shells hold a full octet.", "2"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "10. What does the Period number of an element strictly indicate?",
+            "options": ["Number of electron shells.", "The total number of protons and neutrons.", "The total number of stable isotopes.", "The number of valence electrons."],
             "correctIndex": 0
         },
         {
-            "qText": "Aluminium sulfate has the chemical formula Al_2(SO_4)_3. Aluminium forms an Al^{3+} ion. What is the formula of the sulfate ion?",
-            "options": ["SO_4^-", "SO_4^{2-}", "SO_4^{3-}", "SO_4^{4-}"],
-            "correctIndex": 1
-        },
-        {
-            "qText": "Iron(III) chloride has the chemical formula FeCl_3. Chlorine is in Group 17 and forms a Cl^- ion. What is the formula of the iron ion in this compound?",
-            "options": ["Fe^+", "Fe^{2+}", "Fe^{3+}", "Fe^{4+}"],
-            "correctIndex": 2
-        },
-        {
-            "qText": "Element P is in Group 2 of the Periodic Table and Element Q is in Group 17. What is the most likely formula of the ionic compound they form?",
-            "options": ["PQ", "P_2Q", "PQ_2", "P_2Q_7"],
-            "correctIndex": 2
-        },
-        {
-            "qText": "Why do ionic compounds like magnesium oxide have very high melting points?",
-            "options": [
-                "Strong covalent bonds between atoms require high energy to break.",
-                "Weak intermolecular forces hold molecules together in a lattice.",
-                "Mobile delocalised electrons bind the ions tightly in a giant structure.",
-                "Strong electrostatic forces between oppositely charged ions require high energy."
-            ],
-            "correctIndex": 3
-        },
-        {
-            "qText": "Solid sodium chloride does not conduct electricity, but aqueous sodium chloride does. Which statement best explains this?",
-            "options": [
-                "Solid does not conduct, aqueous does, because ions are free to move in solution.",
-                "Solid conducts, aqueous does not, because ions are fixed in the solid.",
-                "Solid conducts, aqueous does not, because water blocks the flow of electrons.",
-                "Solid does not conduct, aqueous does, because water provides the necessary electrons."
-            ],
+            "qText": "11. What does the Group number (for main group elements) tell us about an atom?",
+            "options": ["Outer shell electrons.", "The number of completely empty electron shells.", "The exact number of neutrons in the most abundant isotope.", "The total number of occupied electron shells."],
             "correctIndex": 0
         },
         {
-            "qText": "Ionic compounds are typically brittle. What happens at the particle level when a strong force is applied to an ionic crystal?",
-            "options": [
-                "The covalent bonds snap under pressure, shattering the crystal into pieces.",
-                "Electrons are squeezed out of the lattice, causing the structure to collapse.",
-                "Layers of ions slide, bringing like charges together which repel and split the crystal.",
-                "The ions are compressed into a smaller volume, causing them to explode outwards."
-            ],
-            "correctIndex": 2
-        },
-        {
-            "qText": "Water (H_2O) has a relatively low boiling point of 100 degrees Celsius. Which statement best explains this?",
-            "options": [
-                "The covalent bonds between the atoms are weak and easily broken by heat.",
-                "The molecules are small and do not contain many electrons to share.",
-                "Simple molecular compounds have no forces of attraction between their atoms.",
-                "The intermolecular forces between the molecules are weak and easily overcome."
-            ],
-            "correctIndex": 3
-        },
-        {
-            "qText": "Why does liquid hydrogen chloride (HCl) not conduct electricity?",
-            "options": [
-                "The covalent bonds are too strong to allow electrons to move freely.",
-                "It contains no mobile ions or free electrons to carry an electrical charge.",
-                "It only conducts when dissolved in water because water acts as a catalyst.",
-                "The molecules are too far apart in the liquid state to transfer electrons."
-            ],
+            "qText": "12. Which element is located in Period 3 and Group 2?",
+            "options": ["Calcium, assuming period is determined by atomic mass.", "Magnesium", "Beryllium, because it is the second element.", "Sodium, because it is the first metal in the third period."],
             "correctIndex": 1
         },
         {
-            "qText": "How many shared pairs of electrons are present in a single molecule of methane (CH_4)?",
-            "options": ["1", "2", "3", "4"],
-            "correctIndex": 3
+            "qText": "13. Which noble gas has the exact electronic configuration of 2, 8?",
+            "options": ["Argon, assuming noble gases in Period 3 possess 10 electrons.", "Neon", "Krypton, forgetting to account for the valence electron.", "Helium, possessing a full outer shell of 8 plus 2 inner."],
+            "correctIndex": 1
         },
         {
-            "qText": "The halogens (F_2, Cl_2, Br_2, I_2) are all simple molecular covalent substances. Why does the boiling point increase as you go down Group 17 from fluorine to iodine?",
-            "options": [
-                "The covalent bonds between the halogen atoms become stronger down the group.",
-                "The atoms become heavier, making them much harder to boil at higher temperatures.",
-                "The number of shared electron pairs increases significantly down the group.",
-                "The molecules become larger, leading to stronger intermolecular forces of attraction."
-            ],
-            "correctIndex": 3
-        },
-        {
-            "qText": "Which of the following molecules contains exactly two shared pairs of electrons (a double bond)?",
-            "options": [
-                "Ammonia (NH_3)",
-                "Water (H_2O)",
-                "Oxygen (O_2)",
-                "Chlorine (Cl_2)"
-            ],
+            "qText": "14. An atom has a nucleon number of 19 and a proton number of 9. How many neutrons does it have?",
+            "options": ["19, representing the total count of neutrons.", "9, assuming it must have equal neutrons and protons.", "10", "28, adding the atomic and mass numbers together."],
             "correctIndex": 2
         },
         {
-            "qText": "In a molecule of ammonia (NH_3), how many lone pairs of electrons are present on the central nitrogen atom?",
-            "options": ["0", "1", "2", "3"],
+            "qText": "15. What strictly happens when a neutral sodium atom forms a sodium ion (Na⁺)?",
+            "options": ["Gains an electron shell to accommodate the positive charge.", "Gains a proton to create a stable cation.", "Loses one neutron, transforming into a different element.", "Loses one electron."],
+            "correctIndex": 3
+        },
+        {
+            "qText": "16. What is the electronic configuration of a chloride ion (Cl⁻)? (Note: Neutral Chlorine is 2,8,7)",
+            "options": ["2, 8, 8, 1, placing the extra electron in a new fourth shell.", "2, 8, 7, as the gain only affects inner core shells.", "2, 8, 6, losing a proton to accommodate negative charge.", "2, 8, 8"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "17. Which statement correctly defines isotopes?",
+            "options": ["Atoms with the same mass number but different electronic configurations.", "Molecules with the same number of atoms but different geometries.", "Same protons, different neutrons.", "Atoms with the same number of neutrons but different protons."],
+            "correctIndex": 2
+        },
+        {
+            "qText": "18. Why do two different isotopes of the same element undergo the exact same chemical reactions?",
+            "options": ["Same valence electrons.", "The strong nuclear force is identical, preventing external reactions.", "They have identical nucleon numbers, exerting the same gravitational pull.", "Their nuclei possess the exact same number of neutrons."],
+            "correctIndex": 0
+        },
+        {
+            "qText": "19. What is the relative mass of a neutron?",
+            "options": ["0", "1/1840", "1", "2"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "20. How many protons, neutrons, and electrons are in a neutral atom of Carbon-14?",
+            "options": ["6 protons, 8 neutrons, 6 electrons", "6 protons, 6 neutrons, 6 electrons", "8 protons, 6 neutrons, 8 electrons", "14 protons, 14 neutrons, 14 electrons"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "21. What is the charge of an ion that has 11 protons and 10 electrons?",
+            "options": ["-1", "+1", "0", "+2"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "22. Which of the following pairs represents isotopes of the same element?",
+            "options": ["¹²C and ¹⁴C", "¹⁴C and ¹⁴N", "H₂O and D₂O", "O₂ and O₃"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "23. The relative atomic mass of Chlorine is 35.5. What does this indicate about its isotopes?",
+            "options": ["Chlorine atoms have exactly 35.5 neutrons.", "It is a weighted average of Cl-35 and Cl-37 isotopes.", "Chlorine only exists as a single isotope with a mass of 35.5.", "The proton number of chlorine is 35.5."],
+            "correctIndex": 1
+        },
+        {
+            "qText": "24. An element X has the electronic configuration 2, 8, 3. Which of the following is true about element X?",
+            "options": ["It is a non-metal in Group 3.", "It is a metal in Period 3, Group 13 (or III).", "It is a noble gas.", "It forms an ion with a -3 charge."],
             "correctIndex": 1
         }
     ]
