@@ -1,0 +1,96 @@
+{
+    "worksheetTitle": "Algebra: Fractional Expressions, Equating Coefficients & Substitution",
+    "revealImageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=1200",
+    "questions": [
+        {
+            "qText": "Simplify the algebraic fraction: (3x - 1)/4 + (2x + 5)/6",
+            "options": ["(5x + 4)/10", "(13x + 7)/24", "(13x + 7)/12", "(13x - 7)/12"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Simplify the algebraic fraction: 5/(2x) - 3/x",
+            "options": ["1/(2x)", "-1/x", "-1/(2x)", "2/x"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Solve for x: (x + 2)/3 - (x - 1)/4 = 1",
+            "options": ["x = 5", "x = 1", "x = -1", "x = 11"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Simplify the algebraic fraction: (2a - 3)/5 - (a + 4)/2",
+            "options": ["(a - 26)/10", "(-a - 26)/5", "(-a + 26)/10", "(-a - 26)/10"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Solve for x: 3/(x - 1) = 2/(x + 2)",
+            "options": ["x = 2", "x = -8", "x = 8", "x = -2"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Simplify the algebraic fraction: 4/(3y) + 1/(2y)",
+            "options": ["11/(5y)", "5/(6y)", "11/(6y)", "5/(5y)"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Given that A(x - 3) + B(x + 2) = 5x - 5 for all values of x. Find the value of A and of B.",
+            "options": ["A = 5, B = 0", "A = 3, B = 2", "A = 2, B = 3", "A = 1, B = 4"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Given that A(x + 5) + B(x - 1) = 4x + 14 for all values of x. Find the value of A and of B.",
+            "options": ["A = 4, B = 0", "A = 1, B = 3", "A = 3, B = 1", "A = 2, B = 2"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Given that A(2x + 5) + B(x - 3) = 5x + 7 for all values of x. Find the value of A and of B.",
+            "options": ["A = 0, B = 5", "A = 1, B = 2", "A = 2, B = 1", "A = 3, B = -1"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Given that p(2x - 1) + q(3x + 2) = 13x + 4 for all values of x. Find the value of p and of q.",
+            "options": ["p = 4, q = 1", "p = 2, q = 3", "p = 3, q = 2", "p = 1, q = 4"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Given that A(x - 2)^2 + B(x + 3) = 2x^2 - 5x + 17 for all values of x. Find the value of A and of B.",
+            "options": ["A = 2, B = -5", "A = 3, B = 2", "A = 1, B = 4", "A = 2, B = 3"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Given that A(x + 1)^2 + B(x - 4) = 3x^2 + 8x - 5 for all values of x. Find the value of A and of B.",
+            "options": ["A = 3, B = 8", "A = 2, B = 3", "A = 1, B = 5", "A = 3, B = 2"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Evaluate 3x^2 - 2y when x = -2 and y = 1/2.",
+            "options": ["13", "11", "14", "10"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Evaluate (2a - b) / (a + 3b) when a = -3 and b = 2.",
+            "options": ["8/3", "-4/3", "-8/3", "4/3"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Evaluate 2x^2 - 3xy when x = -3 and y = 2/3.",
+            "options": ["18", "24", "12", "30"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Evaluate (x^2 - y^2) / (x + y) when x = -4 and y = 2.",
+            "options": ["2", "-2", "-6", "6"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Evaluate 4x - 3y^2 when x = -2 and y = -1/2.",
+            "options": ["-29/2", "-35/4", "-35/2", "-29/4"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Evaluate 2a^2 - 5ab when a = -1/2 and b = 4.",
+            "options": ["19/4", "21/2", "21/4", "19/2"],
+            "correctIndex": 1
+        }
+    ]
+}
