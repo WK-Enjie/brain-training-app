@@ -1,0 +1,166 @@
+{
+    "worksheetTitle": "Atomic Structure: Subatomic Particles, Notation & Electronic Arrangement",
+    "revealImageUrl": "https://images.unsplash.com/photo-1614730341194-75c60740a070?q=80&w=1200",
+    "questions": [
+        {
+            "qText": "What strictly determines the identity of a chemical element?",
+            "options": [
+                "The number of neutrons",
+                "The number of electrons",
+                "The number of protons",
+                "The total mass of the atom"
+            ],
+            "correctIndex": 2
+        },
+        {
+            "qText": "An atom is represented by the notation ²⁷₁₃Al. How many neutrons are present in this atom?",
+            "options": [
+                "13",
+                "14",
+                "27",
+                "40"
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "A neutral atom of potassium has a proton number of 19 and a nucleon number of 39. How many electrons does it contain?",
+            "options": [
+                "19",
+                "20",
+                "39",
+                "58"
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "A particle has 17 protons, 18 neutrons, and 18 electrons. Which of the following statements correctly describes this particle?",
+            "options": [
+                "It is a neutral atom of Chlorine.",
+                "It is a neutral atom of Argon.",
+                "It is a positively charged particle of the element Chlorine.",
+                "It is a negatively charged particle of the element Chlorine."
+            ],
+            "correctIndex": 3
+        },
+        {
+            "qText": "An element has a proton number of 15. What is its electronic configuration?",
+            "options": [
+                "2, 8, 7",
+                "2, 8, 5",
+                "2, 8, 8",
+                "2, 5"
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "An element has the electronic configuration 2, 8, 8, 2. Which Group of the Periodic Table does it belong to?",
+            "options": [
+                "Group 2",
+                "Group 8",
+                "Group 18",
+                "Group 20"
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An element has the electronic configuration 2, 8, 3. In which Period of the Periodic Table is this element located?",
+            "options": [
+                "Period 2",
+                "Period 8",
+                "Period 3",
+                "Period 13"
+            ],
+            "correctIndex": 2
+        },
+        {
+            "qText": "In the standard atomic notation ᴬZX, what does the symbol 'Z' represent?",
+            "options": [
+                "Nucleon number",
+                "Proton number",
+                "Number of neutrons",
+                "Number of electrons"
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "An atom has a nucleon number of 23 and contains 11 electrons. Assuming it is a neutral atom, how many neutrons does it have?",
+            "options": [
+                "11",
+                "12",
+                "23",
+                "34"
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Why is the proton number used to identify an element, rather than the nucleon number or electron number?",
+            "options": [
+                "The number of protons is unique to each element and never changes for that element.",
+                "The number of electrons is always greater than the number of protons.",
+                "The nucleon number is the same for all elements.",
+                "Protons are the only subatomic particles that have mass."
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An atom has the electronic configuration 2, 8, 7. How many valence (outer shell) electrons does it have, and what does this indicate?",
+            "options": [
+                "2 valence electrons; it is in Group 2.",
+                "8 valence electrons; it is a noble gas.",
+                "7 valence electrons; it is in Group 17.",
+                "17 valence electrons; it is highly reactive."
+            ],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A particle has 11 protons and 10 electrons. What is its overall charge and which element does it belong to?",
+            "options": [
+                "Neutral Sodium atom",
+                "Positively charged Sodium particle",
+                "Negatively charged Sodium particle",
+                "Positively charged Neon particle"
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "An element is located in Period 2 and Group 15 of the Periodic Table. What is its proton number?",
+            "options": [
+                "5",
+                "7",
+                "15",
+                "17"
+            ],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Which of the following atoms contains exactly 10 neutrons?",
+            "options": [
+                "Nucleon number 19, Proton number 9",
+                "Nucleon number 23, Proton number 11",
+                "Nucleon number 16, Proton number 8",
+                "Nucleon number 20, Proton number 10"
+            ],
+            "correctIndex": 3
+        },
+        {
+            "qText": "What is the electronic configuration of a neutral atom with a proton number of 20?",
+            "options": [
+                "2, 8, 8, 2",
+                "2, 8, 10",
+                "2, 8, 8, 8",
+                "2, 18"
+            ],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Two different elements have the same number of outer shell electrons. What can be deduced about these two elements?",
+            "options": [
+                "They are in the same Period.",
+                "They have the same nucleon number.",
+                "They are in the same Group.",
+                "They have the same number of protons."
+            ],
+            "correctIndex": 2
+        }
+    ]
+}
