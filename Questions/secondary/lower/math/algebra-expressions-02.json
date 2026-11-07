@@ -118,7 +118,7 @@
             "correctIndex": 1
         },
         {
-            "qText": "Solve for x: (5x - 2) /3 = (3x + 4)/2",
+            "qText": "Solve for x. (5x - 2)/3 = (3x + 4)/2",
             "options": ["x = 12", "x = 16", "x = 10", "x = 8"],
             "correctIndex": 1
         }
