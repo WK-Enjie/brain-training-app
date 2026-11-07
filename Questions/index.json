@@ -1,18 +1,18 @@
 [
     {
-        "title": "Algebra: Expressions, Fractions & Equations (Part 1)",
+        "title": "Algebra: Expressions, Fractions & Equations",
         "icon": "🔤",
         "subject": "Lower Sec E-Maths",
         "topic": "Algebra",
-        "questionCount": 18,
+        "questionCount": 24,
         "file": "secondary/lower/math/algebra-expressions-01.json"
     },
     {
-        "title": "Algebra: Expressions, Fractions & Equations (Part 2)",
-        "icon": "🔤",
+        "title": "Algebra: Expressions, Fractions & Equations",
+        "icon": "📏",
         "subject": "Lower Sec E-Maths",
         "topic": "Algebra",
-        "questionCount": 18,
+        "questionCount": 24,
         "file": "secondary/lower/math/algebra-expressions-02.json"
     },
     {
@@ -20,31 +20,39 @@
         "icon": "🔼",
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
-        "questionCount": 18,
-        "file": "secondary/upper/emath/indices-01.json"
+        "questionCount": 12,
+        "file": "secondary/upper/math/indices-01.json"
     },
     {
         "title": "Indices: Advanced Laws & Exponential Equations (Part 2)",
         "icon": "📈",
         "subject": "Upper Sec E-Maths",
         "topic": "Indices",
-        "questionCount": 18,
-        "file": "secondary/upper/emath/indices-02.json"
+        "questionCount": 12,
+        "file": "secondary/upper/math/indices-02.json"
     },
     {
         "title": "Matter, Atoms, Isotopes & Bonding",
         "icon": "⚗️",
         "subject": "Upper Sec Chemistry",
         "topic": "Atomic Structure & Bonding",
-        "questionCount": 18,
+        "questionCount": 24,
         "file": "secondary/upper/chemistry/matter-atoms-bonding-01.json"
     },
     {
-    "title": "Moles, Gas Volumes & Concentration (Part 1)",
-    "icon": "⚖️",
-    "subject": "Upper Sec Chemistry",
-    "topic": "The Mole Concept",
-    "questionCount": 24,
-    "file": "secondary/upper/chemistry/mol-vol-conc-01.json"
-}
+        "title": "Atomic Structure: Subatomic Particles, Notation & Electronic Arrangement",
+        "icon": "⚛️",
+        "subject": "Upper Sec Chemistry",
+        "topic": "Atomic Structure",
+        "questionCount": 18,
+        "file": "secondary/upper/chemistry/atomic-structure-01.json"
+    },
+    {
+        "title": "Algebra: Fractional Expressions, Equating Coefficients & Substitution",
+        "icon": "➗",
+        "subject": "Lower Sec E-Maths",
+        "topic": "Algebra",
+        "questionCount": 18,
+        "file": "secondary/lower/math/algebra-frac-01.json"
+    }
 ]
