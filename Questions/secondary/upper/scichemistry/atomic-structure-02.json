@@ -1,0 +1,126 @@
+{
+    "worksheetTitle": "Atomic Structure: Fundamentals, Configurations & Isotopes",
+    "revealImageUrl": "https://raw.githubusercontent.com/WK-Enjie/brain-training-app/main/images/pokemon-6.jpg",
+    "questions": [
+        {
+            "qText": "What strictly determines the identity of a chemical element?",
+            "options": ["The number of protons", "The nucleon number", "The number of electrons", "The number of neutrons"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An atom of magnesium has a proton number of 12 and a nucleon number of 24. How many neutrons does it contain?",
+            "options": ["24", "12", "36", "6"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Which of the following represents the electronic configuration of a neutral atom of phosphorus (proton number 15)?",
+            "options": ["2, 8, 7", "2, 8, 5", "2, 5", "2, 8, 8"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "What does the Period number of an element in the Periodic Table indicate?",
+            "options": ["The number of valence electrons", "The number of electron shells", "The nucleon number", "The total number of protons"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "What does the Group number of a main group element indicate?",
+            "options": ["The relative atomic mass", "The number of electron shells", "The number of valence (outer shell) electrons", "The total number of neutrons"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A neutral atom always has an equal number of which two subatomic particles?",
+            "options": ["Protons and neutrons", "Protons and electrons", "Protons and nucleons", "Neutrons and electrons"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Which statement correctly defines isotopes?",
+            "options": ["Atoms of the same element with the same number of protons but different numbers of neutrons.", "Atoms with the same nucleon number but different proton numbers.", "Atoms of different elements with the same number of neutrons.", "Ions of the same element with different charges."],
+            "correctIndex": 0
+        },
+        {
+            "qText": "A particle has 11 protons, 12 neutrons, and 10 electrons. What is this particle?",
+            "options": ["A neutral neon atom", "A neutral sodium atom", "A negatively charged sodium ion", "A positively charged sodium ion (Na⁺)"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "What is the electronic configuration of an oxide ion (O²⁻)? (Neutral oxygen is proton number 8)",
+            "options": ["2, 4", "2, 6", "2, 8", "2, 8, 2"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "An element is in Period 3 and Group 2 of the Periodic Table. What is its proton number?",
+            "options": ["2", "3", "20", "12"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Why do isotopes of the same element have similar chemical properties?",
+            "options": ["They have the same nucleon number.", "They have the same number of neutrons.", "They have the same physical mass.", "They have the same number of valence electrons."],
+            "correctIndex": 3
+        },
+        {
+            "qText": "How many valence electrons does an element in Group 15 have?",
+            "options": ["5", "3", "15", "8"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "What is the nucleon number of an atom with 8 protons and 9 neutrons?",
+            "options": ["9", "1", "8", "17"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "Which subatomic particle has a relative mass of 1 and no electrical charge?",
+            "options": ["Neutron", "Electron", "Nucleon", "Proton"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An atom of element X has 13 protons. In which Group of the Periodic Table is it located?",
+            "options": ["Group 8", "Group 3", "Group 13", "Group 16"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "How many electrons are present in an Al³⁺ ion? (Aluminium proton number = 13)",
+            "options": ["16", "3", "10", "13"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Which of the following pairs represents isotopes of the same element?",
+            "options": ["¹⁴C and ¹⁴N", "H₂O and D₂O", "O₂ and O₃", "¹²C and ¹⁴C"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "A particle has 17 protons and 18 electrons. What is its overall charge?",
+            "options": ["-17", "0", "+1", "-1"],
+            "correctIndex": 3
+        },
+        {
+            "qText": "What is the electronic configuration of a neutral calcium atom (proton number 20)?",
+            "options": ["2, 8, 8, 2", "2, 8, 10", "2, 8, 8, 8", "2, 18"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An element has the electronic configuration 2, 8, 7. Which of the following is true?",
+            "options": ["It is a noble gas.", "It is in Period 3, Group 17.", "It is in Period 7, Group 3.", "It has 7 electron shells."],
+            "correctIndex": 1
+        },
+        {
+            "qText": "If an atom has a proton number of 9, which element is it?",
+            "options": ["Neon", "Oxygen", "Fluorine", "Nitrogen"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Which statement about the nucleus of an atom is correct?",
+            "options": ["It contains protons and electrons and has a neutral charge.", "It contains only protons and has a positive charge.", "It contains neutrons and electrons and has a negative charge.", "It contains protons and neutrons and has a positive charge."],
+            "correctIndex": 3
+        },
+        {
+            "qText": "An ion Y²⁻ has 10 electrons. What is the proton number of element Y?",
+            "options": ["8", "12", "2", "10"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Two atoms have the same proton number but different nucleon numbers. They must have different numbers of:",
+            "options": ["Neutrons", "Protons", "Electrons", "Electron shells"],
+            "correctIndex": 0
+        }
+    ]
+}
