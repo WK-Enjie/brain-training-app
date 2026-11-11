@@ -54,5 +54,13 @@
         "topic": "Algebra",
         "questionCount": 18,
         "file": "secondary/lower/math/algebra-frac-01.json"
+    },
+    {
+        "title": "Atomic Structure: Advanced Deductions, Ions & Isotopes",
+        "icon": "🔬",
+        "subject": "Upper Sec Chemistry",
+        "topic": "Atomic Structure",
+        "questionCount": 24,
+        "file": "secondary/upper/scichemistry/atomic-structure-02.json"
     }
 ]
