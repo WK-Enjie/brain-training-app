@@ -62,5 +62,21 @@
         "topic": "Atomic Structure",
         "questionCount": 24,
         "file": "secondary/upper/scichemistry/atomic-structure-02.json"
+    },
+    {
+        "title": "Algebra: Factorisation & Solving Quadratic Equations (Part 1)",
+        "icon": "📐",
+        "subject": "Lower Sec E-Maths",
+        "topic": "Algebra",
+        "questionCount": 24,
+        "file": "secondary/lower/math/algebra-quadratic-01.json"
+    },
+    {
+        "title": "Algebra: Factorisation & Solving Quadratic Equations (Part 2)",
+        "icon": "📐",
+        "subject": "Lower Sec E-Maths",
+        "topic": "Algebra",
+        "questionCount": 24,
+        "file": "secondary/lower/math/algebra-quadratic-02.json"
     }
 ]
