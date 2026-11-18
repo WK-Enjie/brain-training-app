@@ -78,5 +78,13 @@
         "topic": "Algebra",
         "questionCount": 24,
         "file": "secondary/lower/math/algebra-quadratic-02.json"
+    },
+    {
+        "title": "Atomic Structure: Advanced Deductions, Ions & Periodic Trends (Part 3)",
+        "icon": "🔬",
+        "subject": "Upper Sec Chemistry",
+        "topic": "Atomic Structure",
+        "questionCount": 20,
+        "file": "secondary/upper/scichemistry/atomic-structure-03.json"
     }
 ]
