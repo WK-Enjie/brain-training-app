@@ -1,0 +1,106 @@
+{
+    "worksheetTitle": "Atomic Structure: Advanced Deductions, Ions & Periodic Trends",
+    "revealImageUrl": "https://raw.githubusercontent.com/WK-Enjie/brain-training-app/main/images/pokemon-8.jpg",
+    "questions": [
+        {
+            "qText": "An ion X³⁺ contains 10 electrons and 14 neutrons. What is the nucleon number of this ion?",
+            "options": ["13", "24", "27", "30"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Particle A has 17 protons, 18 neutrons, and 18 electrons. Particle B has 17 protons, 20 neutrons, and 17 electrons. Which statement about A and B is correct?",
+            "options": ["A and B are isotopes of the same element", "A and B have the same nucleon number", "A and B are ions of different elements", "A has a higher nucleon number than B"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An ion Y²⁻ has the exact same number of electrons as a neutral argon atom. What is the atomic number of element Y, and in which group is it found?",
+            "options": ["Atomic number 18, Group 18", "Atomic number 20, Group 2", "Atomic number 16, Group 16", "Atomic number 8, Group 16"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Which pair of ions both possess the same number of electrons as a neutral neon atom, but are formed from elements in different periods of the Periodic Table?",
+            "options": ["Na⁺ and Cl⁻", "Mg²⁺ and O²⁻", "K⁺ and F⁻", "Ca²⁺ and S²⁻"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Element Z forms a compound with the formula ZCl₃. Given that Z is located in Period 3, what is the electronic configuration of a neutral atom of Z?",
+            "options": ["2, 8, 3", "2, 8, 5", "2, 8, 7", "2, 8, 8, 3"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "The relative atomic mass of an element is defined as the weighted average mass of its naturally occurring isotopes. Element X has two isotopes, ⁶⁹X and ⁷¹X, and a relative atomic mass of 69.8. What can be deduced about their relative abundances?",
+            "options": ["⁶⁹X is more abundant than ⁷¹X", "⁷¹X is more abundant than ⁶⁹X", "They are present in exactly equal amounts", "The atomic number of X is 69.8"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "A particle has a nucleon number of 31, an atomic number of 15, and an overall charge of 3-. How many neutrons and electrons does this particle contain?",
+            "options": ["16 neutrons, 18 electrons", "15 neutrons, 18 electrons", "16 neutrons, 12 electrons", "31 neutrons, 15 electrons"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An element in Period 4 forms an ion with a 2+ charge. This ion has the same electron configuration as an argon atom. What is the atomic number of this element?",
+            "options": ["18", "20", "22", "36"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Why do ³⁵Cl and ³⁷Cl have different physical properties (such as density) but undergo the exact same chemical reactions with sodium metal?",
+            "options": ["They have different numbers of protons", "They have different numbers of valence electrons", "They have different masses but identical outer shell electron configurations", "Their different nucleon numbers dictate their chemical reactivity"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "The formula of the oxide of element M is M₂O₃. The ion M³⁺ has exactly 10 electrons. What is the atomic number of element M?",
+            "options": ["10", "13", "16", "23"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Element P is in Group 15 and Period 3. Element Q is in Group 17 and Period 3. What is the chemical formula of the compound formed when P reacts with Q?",
+            "options": ["PQ", "P₃Q", "PQ₃", "P₃Q₇"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "Which of the following ions contains exactly 18 electrons and is formed from an element located in Group 16?",
+            "options": ["Cl⁻", "S²⁻", "Ar", "K⁺"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Atom X has an atomic number of 19 and a nucleon number of 39. Atom Y has an atomic number of 20 and a nucleon number of 40. Which statement is true?",
+            "options": ["X and Y have the same number of neutrons", "X and Y are isotopes of the same element", "X has more electrons than Y", "Y has a smaller atomic radius than X"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "What is the electronic configuration of the aluminium ion (Al³⁺) formed when aluminium reacts with oxygen?",
+            "options": ["2, 8", "2, 8, 3", "2, 8, 8", "2, 8, 8, 3"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An atom of element R has 3 electron shells, and its outermost shell contains 7 electrons. What is the nucleon number of R if it contains exactly 18 neutrons?",
+            "options": ["17", "25", "35", "42"],
+            "correctIndex": 2
+        },
+        {
+            "qText": "A cation W⁺ and an anion Z⁻ both have the same number of electrons as a neutral neon atom. Which pair of elements could W and Z be?",
+            "options": ["W = Potassium, Z = Chlorine", "W = Sodium, Z = Fluorine", "W = Magnesium, Z = Oxygen", "W = Lithium, Z = Nitrogen"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Relative atomic mass is defined as the weighted average mass of an element's isotopes. Copper has a relative atomic mass of 63.5 and consists of two isotopes, ⁶³Cu and ⁶⁵Cu. What is the approximate ratio of ⁶³Cu to ⁶⁵Cu in a natural sample?",
+            "options": ["1 : 1", "3 : 1", "1 : 3", "99 : 1"],
+            "correctIndex": 1
+        },
+        {
+            "qText": "Element A has an atomic number of 12. Element B has an atomic number of 9. What is the electronic configuration of the ions present in the ionic compound formed by A and B?",
+            "options": ["A²⁺ is 2, 8 and B⁻ is 2, 8", "A²⁺ is 2, 8, 2 and B⁻ is 2, 7", "A⁺ is 2, 8, 1 and B²⁻ is 2, 8", "A²⁺ is 2, 8 and B⁻ is 2, 8, 8"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "Particle 1 has 8 protons, 8 neutrons, and 10 electrons. Particle 2 has 8 protons, 10 neutrons, and 8 electrons. Which statement is correct?",
+            "options": ["They are atoms/ions of the same element", "They have the same number of neutrons", "They have the same nucleon number", "They are ions of different elements"],
+            "correctIndex": 0
+        },
+        {
+            "qText": "An ion X³⁻ has the same number of electrons as a neutral argon atom. What is the group number of element X in the modern Periodic Table?",
+            "options": ["Group 3", "Group 5", "Group 15", "Group 18"],
+            "correctIndex": 2
+        }
+    ]
+}
